@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""Stop only the MyEval Langfuse stack. Keep its persistent volumes."""
+import os
+from pathlib import Path
+import platform
+import subprocess
+
+ROOT = Path(__file__).resolve().parents[1]
+LOCAL = ROOT / '.local' / 'platform'
+env = os.environ.copy()
+env['DOCKER_CONFIG'] = str(LOCAL / 'docker')
+env['COLIMA_HOME'] = str(LOCAL / 'colima')
+env['LIMA_HOME'] = str(LOCAL / 'colima' / '_lima')
+for key in ('DOCKER_CONTEXT', 'DOCKER_TLS_VERIFY', 'DOCKER_CERT_PATH'):
+    env.pop(key, None)
+if platform.system() == 'Darwin':
+    env['DOCKER_HOST'] = 'unix://' + str(LOCAL / 'colima' / 'myeval' / 'docker.sock')
+if (LOCAL / 'secrets.env').exists():
+    env.update(dict(line.split('=', 1) for line in (LOCAL / 'secrets.env').read_text().splitlines() if '=' in line and not line.startswith('#')))
+    subprocess.run(['docker', 'compose', '--env-file', str(LOCAL / 'secrets.env'), '-f', str(ROOT / 'infra' / 'compose.yaml'), 'down'], env=env, check=True)
+if platform.system() == 'Darwin':
+    subprocess.run(['colima', 'stop', 'myeval'], env=env, check=True)
+print('MyEval Langfuse stopped; volumes and credentials retained.')

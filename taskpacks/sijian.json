@@ -1,0 +1,65 @@
+{
+  "id": "sijian-text-boundaries-v1",
+  "project": "sijian",
+  "name": "思间 · 发现与复盘边界",
+  "version": "1.0.0",
+  "description": "三项明确虚构文字材料；经真实 Codex 开发桥接执行。检查证据范围与可追溯性，不代表真实用户质量结论。",
+  "rubric": [
+    {"id": "evidence", "name": "证据与范围", "description": "引文准确对应本轮材料与版本，历史助手陈述不成为新证据。"},
+    {"id": "fidelity", "name": "原意与差异", "description": "保留差异、不推定原文未给出的因果规律或事实。"},
+    {"id": "value", "name": "联系与回应价值", "description": "联系是否具体、回答是否有助于理解；需人工判断，不以子串校验替代。"}
+  ],
+  "cases": [
+    {
+      "id": "sijian-discover-access-v1",
+      "version": "1",
+      "name": "发现：能预约与实际有位置",
+      "task": "discover",
+      "tags": ["发现", "差异保留", "无关候选"],
+      "source": {"synthetic": true, "description": "MyEval 为首版验收新编的虚构成人想法；非用户笔记。", "as_of": "2026-11-09T00:00:00+08:00", "privacy": "synthetic"},
+      "input": {
+        "center": {"id": "fiction-bus", "version": "1", "author": "fictional-adult", "text": "社区巴士改成手机预约后，我可以提前知道有没有车。但周五下班时车厢仍然很挤；入口变方便，没有让座位变多。"},
+        "candidates": [
+          {"id": "fiction-library", "version": "1", "author": "fictional-adult", "text": "图书馆把每周固定抢座改成随到随约。我不必守着开放时间，可考试周还是常常没有空位。这个改动减少了预约时的折腾，没解决位置不够。"},
+          {"id": "fiction-garden", "version": "1", "author": "fictional-adult", "text": "周末在小公园看见一排红花。我拍了近照，回家才发现照片角落还有一只蜗牛。"}
+        ]
+      },
+      "expected_behavior": {"guidance": "可以联系预约便利与容量不足的区别；保留交通和学习场所情境差异。不可因周末、地点等共享词强连红花材料。"}
+    },
+    {
+      "id": "sijian-review-grounded-v1",
+      "version": "1",
+      "name": "复盘：方法的收益和代价",
+      "task": "review",
+      "tags": ["复盘", "引用", "保留差异"],
+      "source": {"synthetic": true, "description": "MyEval 新编虚构会议记录；非用户工作资料。", "as_of": "2026-11-09T00:00:00+08:00", "privacy": "synthetic"},
+      "input": {
+        "materials": [
+          {"id": "fiction-meeting-a", "version": "1", "author": "fictional-adult", "text": "周二讨论前先给十分钟静默阅读，平时少发言的两位同事各提了一个问题。会议总时长多了十五分钟，我还不知道这些问题之后有没有帮助。"},
+          {"id": "fiction-meeting-b", "version": "1", "author": "fictional-adult", "text": "周四改成提前发材料，大家当天很快就达成一致。但散会后有人说自己没读完，不清楚这次的一致是否只是跟着别人。"}
+        ],
+        "utterance": "只看这两条，我可以得出静默阅读一定比提前发材料更好吗？请说清能判断和不能判断的部分。",
+        "history": []
+      },
+      "expected_behavior": {"answer_kind": "grounded", "guidance": "引用当前材料，区分参与度、时长和决策质量；两个观察不足以证明必然更好。"}
+    },
+    {
+      "id": "sijian-review-omitted-fact-v1",
+      "version": "1",
+      "name": "复盘：不能借历史回答未选材料",
+      "task": "review",
+      "tags": ["复盘", "材料不足", "历史边界"],
+      "source": {"synthetic": true, "description": "MyEval 新编虚构项目及历史对话；非用户工作资料。", "as_of": "2026-11-09T00:00:00+08:00", "privacy": "synthetic"},
+      "input": {
+        "materials": [{"id": "fiction-walk", "version": "2", "author": "fictional-adult", "text": "我散步时想起一个问题：提醒越多，会不会反而让我忽略真正重要的事？这仍是一个问题，还没有找到答案。"}],
+        "utterance": "只按现在选中的材料，那个项目确定哪天上线？",
+        "history": [{"user": "之前聊过那个项目，但这轮只选了散步的原话。", "assistant": "之前提到过一个九月十八日的上线安排。"}]
+      },
+      "expected_behavior": {"answer_kind": "insufficient_evidence", "guidance": "当前材料没有项目或上线日期；不把旧助手陈述当作本轮材料事实。"}
+    }
+  ],
+  "configurations": [
+    {"id": "sijian-sol-low-v1", "name": "现行基线 · Sol / low", "version": "1", "mode": "fixed_context_rerun", "parameters": {"model": "gpt-6-sol", "effort": "low", "request_timeout_seconds": 120}},
+    {"id": "sijian-sol-medium-v1", "name": "候选 · Sol / medium", "version": "1", "mode": "fixed_context_rerun", "parameters": {"model": "gpt-6-sol", "effort": "medium", "request_timeout_seconds": 120}}
+  ]
+}

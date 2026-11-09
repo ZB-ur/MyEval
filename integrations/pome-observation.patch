@@ -1,0 +1,163 @@
+diff --git a/backend/app.py b/backend/app.py
+index 80baddb..605cb29 100644
+--- a/backend/app.py
++++ b/backend/app.py
+@@ -16,6 +16,7 @@ import webbrowser
+ import threading
+ import time
+ from .local_voice import LocalVoice
++from .evaluation import AIObservation, visible_provider_response
+ from contextlib import contextmanager
+ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+ from pathlib import Path
+@@ -328,7 +329,10 @@ def restored_background(draft):
+ 
+ 
+ class Store:
+-    def __init__(self, directory):
++    def __init__(self, directory, runtime_settings=None):
++        # Optional execution-only credentials for isolated integrations. They
++        # never enter SQLite, backup, or a command line; normal use is unchanged.
++        self.runtime_settings = dict(runtime_settings or {})
+         self.directory = directory.resolve()
+         self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+         self.path = self.directory / 'diary.sqlite3'
+@@ -401,7 +405,8 @@ class Store:
+ 
+     def settings(self):
+         with self.connect() as db:
+-            return json.loads(db.execute('SELECT body FROM settings WHERE id=1').fetchone()[0])
++            return {**json.loads(db.execute('SELECT body FROM settings WHERE id=1').fetchone()[0]),
++                    **self.runtime_settings}
+ 
+     def save_settings(self, value):
+         if not isinstance(value, dict) or set(value) - set(SETTING_KEYS) - {'apiKey', 'clearApiKey', 'conversationRounds', 'speechRate'}:
+@@ -737,7 +742,10 @@ class Handler(BaseHTTPRequestHandler):
+                 # Prompt instructions alone do not enforce the JSON envelope.
+                 payload['response_format'] = {'type': 'json_object'}
+                 payload['thinking'] = {'type': 'enabled'}
+-                payload['reasoning_effort'] = 'low'
++                effort = getattr(self.server, 'ai_options', {}).get('chat_reasoning_effort', 'low')
++                if effort not in ('low', 'high', 'max'):
++                    raise APIError(400, '服务的思考强度设置无效。')
++                payload['reasoning_effort'] = effort
+                 # Thinking and visible output share the budget. Keep room for
+                 # reasoning so a short spoken response is not truncated.
+                 payload['max_tokens'] = 4096
+@@ -747,12 +755,27 @@ class Handler(BaseHTTPRequestHandler):
+         started = time.monotonic()
+         stage = 'candidate' if path == '/api/chat' else 'summary'
+         failures = 0
++        observation = AIObservation(getattr(self.server, 'ai_observer', None),
++                                    episode=value.get('storyId'),
++                                    turn=sum(t['role'] == 'child' for t in turns),
++                                    operation=path.rsplit('/', 1)[-1],
++                                    request_id=self.headers.get('X-Request-ID'))
++        observation.emit('input', {'turns': turns, 'background': background,
++                                  'question_allowed': question_allowed,
++                                  'force_closing': is_final_round or finish_requested})
++        stage_attempts = {}
+         for request_index in range(3 if path == '/api/chat' else 2):
++            stage_attempts[stage] = stage_attempts.get(stage, 0) + 1
++            attempt = stage_attempts[stage]
+             try:
+                 remaining = 75 - (time.monotonic() - started)
+                 if remaining <= 0:
+                     raise APIError(502, 'AI 回应等待太久，请重试。')
++                observation.emit('model_request', {'payload': payload, 'request_index': request_index + 1,
++                                                   'remaining_budget_seconds': remaining},
++                                 stage=stage, attempt=attempt)
+                 result = provider_json(settings, 'chat/completions', encode(payload), timeout=min(35, remaining))
++                observation.emit('model_response', visible_provider_response(result), stage=stage, attempt=attempt)
+                 choices = result.get('choices')
+                 if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+                     raise APIError(502, 'AI 这次没有说清楚，可以重试。', True)
+@@ -782,6 +805,8 @@ class Handler(BaseHTTPRequestHandler):
+                     except (ValueError, TypeError):
+                         raise APIError(502, '这次的回应没有准备好，请重试。', True) from None
+                     text = spoken_reply(envelope)
++                    observation.emit('stage_result', {'envelope': envelope, 'validated_reply': text},
++                                     stage=stage, attempt=attempt)
+                     if stage == 'candidate':
+                         review_data = {'transcript': [{'role': t['role'], 'text': t['text']}
+                                                       for t in turns if t['role'] != 'system'],
+@@ -797,6 +822,10 @@ class Handler(BaseHTTPRequestHandler):
+                 break
+             except APIError as exc:
+                 failures += 1
++                observation.emit('stage_error', {'status': exc.status, 'message': exc.message,
++                                                 'retryable': exc.retryable, 'failure_count': failures,
++                                                 'will_retry': bool(exc.retryable and failures <= 1 and time.monotonic() - started < 70)},
++                                 stage=stage, attempt=attempt)
+                 if not exc.retryable or failures > 1 or time.monotonic() - started >= 70:
+                     raise
+                 print('AI transient retry: ' + stage, file=sys.stderr, flush=True)
+@@ -809,8 +838,12 @@ class Handler(BaseHTTPRequestHandler):
+                 question = re.split(r'(?<=[。！？!?\n])', question)[0].strip()
+                 if question.endswith(('？', '?')):
+                     text += question
+-            return self.reply(200, {'text': text, 'isFinalRound': is_final_round, 'endConversation': should_end, 'conversationRounds': conversation_rounds})
+-        return self.reply(200, {'text': output.strip()})
++            delivered = {'text': text, 'isFinalRound': is_final_round, 'endConversation': should_end, 'conversationRounds': conversation_rounds}
++            observation.emit('delivered', delivered, stage='final')
++            return self.reply(200, delivered)
++        delivered = {'text': output.strip()}
++        observation.emit('delivered', delivered, stage='summary')
++        return self.reply(200, delivered)
+ 
+ 
+ def default_directory():
+--- /dev/null
++++ b/backend/evaluation.py
+@@ -0,0 +1,51 @@
++"""Optional observation seam for the real text pipeline.
++
++No sink is installed by the normal product entrypoint. An explicitly isolated
++runner may install a sink; this module never retains provider reasoning fields,
++credentials, raw provider responses, or audio. The sink owns data retention.
++"""
++import copy
++import datetime as dt
++
++
++class AIObservation:
++    def __init__(self, sink=None, **identity):
++        self.sink = sink
++        self.identity = identity
++
++    def emit(self, kind, data, *, stage=None, attempt=None):
++        if self.sink is None:
++            return
++        self.sink({
++            'kind': kind,
++            'at': dt.datetime.now(dt.timezone.utc).isoformat(),
++            **self.identity,
++            'stage': stage,
++            'attempt': attempt,
++            'data': copy.deepcopy(data),
++        })
++
++
++def visible_provider_response(result):
++    """Explicit allowlist: content is observable; reasoning_content never is."""
++    choices = result.get('choices')
++    choice = choices[0] if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
++    message = choice.get('message')
++    message = message if isinstance(message, dict) else {}
++    usage = result.get('usage')
++    usage = usage if isinstance(usage, dict) else {}
++    counts = {k: usage[k] for k in ('prompt_tokens', 'completion_tokens', 'total_tokens',
++                                   'prompt_cache_hit_tokens', 'prompt_cache_miss_tokens')
++              if type(usage.get(k)) is int}
++    details = usage.get('completion_tokens_details')
++    if isinstance(details, dict) and type(details.get('reasoning_tokens')) is int:
++        counts['reasoning_tokens'] = details['reasoning_tokens']
++    return {
++        'model': result.get('model') if isinstance(result.get('model'), str) else None,
++        'provider_request_id': result.get('id') if isinstance(result.get('id'), str) else None,
++        'finish_reason': choice.get('finish_reason'),
++        'content': message.get('content') if isinstance(message.get('content'), str) else None,
++        'refusal': message.get('refusal') if isinstance(message.get('refusal'), str) else None,
++        'usage': counts or None,
++        'effective_reasoning_effort': None,
++    }

@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Small local lifecycle command; never prints authentication material."""
+import argparse
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+from urllib.request import ProxyHandler, build_opener
+
+root = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser()
+parser.add_argument('action', choices=['start', 'stop', 'status'])
+parser.add_argument('--port', type=int, default=8310)
+parser.add_argument('--data-dir', type=Path, default=root / '.local/data')
+args = parser.parse_args()
+directory = args.data_dir.resolve()
+directory.mkdir(parents=True, exist_ok=True)
+info = directory / 'server.json'
+previous = json.loads(info.read_text()) if info.exists() else {}
+pid = previous.get('pid')
+command = subprocess.run(['ps', '-p', str(pid or 0), '-o', 'command='], capture_output=True, text=True).stdout
+running = bool(pid and ('myeval' in command) and ('python' in command.lower()))
+
+if args.action == 'start':
+    if running:
+        print(f"已运行：{previous.get('url')}；执行 scripts/open 打开管理员工作区。")
+        sys.exit(0)
+    with (directory / 'server.log').open('ab') as log:
+        process = subprocess.Popen([sys.executable, '-m', 'myeval', '--port', str(args.port), '--data-dir', str(directory)], cwd=root,
+                                   stdin=subprocess.DEVNULL, stdout=log, stderr=log, start_new_session=True)
+    opener = build_opener(ProxyHandler({}))
+    for _ in range(40):
+        try:
+            response = opener.open(f'http://127.0.0.1:{args.port}/api/health', timeout=1)
+            state = json.loads(info.read_text()) if info.exists() else {}
+            if response.status == 200 and state.get('pid') == process.pid:
+                print(f'MyEval 已启动：http://127.0.0.1:{args.port}；执行 scripts/open 打开管理员工作区。')
+                break
+        except Exception:
+            pass
+        if process.poll() is not None:
+            raise SystemExit('启动失败，请查看独立数据目录中的 server.log。')
+        time.sleep(.2)
+    else:
+        raise SystemExit('启动仍未就绪，请查看 server.log；未重复启动。')
+elif args.action == 'stop':
+    if not running:
+        print('该实例未运行。')
+    else:
+        os.kill(pid, signal.SIGTERM)
+        for _ in range(80):
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                print('MyEval 已停止；数据和评价保留。')
+                break
+            time.sleep(.25)
+        else:
+            print('已请求停止；仍有清理工作，未强杀或删除数据。')
+else:
+    print(json.dumps({'running': running, 'url': previous.get('url'), 'pid': pid if running else None, 'data_directory': str(directory)}, ensure_ascii=False, indent=2))

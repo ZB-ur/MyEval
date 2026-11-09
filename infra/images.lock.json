@@ -1,0 +1,54 @@
+{
+  "verified_at": "2026-11-09",
+  "tested_architecture": "arm64",
+  "images": [
+    {
+      "image": "docker.langfuse.com/langfuse/langfuse:4.76.0",
+      "digests": [
+        "docker.langfuse.com/langfuse/langfuse@sha256:59abb54faacf45b63d09f4076d45683dae26a6661974d497836543d350b16575"
+      ],
+      "id": "sha256:59abb54faacf45b63d09f4076d45683dae26a6661974d497836543d350b16575",
+      "architecture": "arm64"
+    },
+    {
+      "image": "docker.langfuse.com/langfuse/langfuse-worker:4.76.0",
+      "digests": [
+        "docker.langfuse.com/langfuse/langfuse-worker@sha256:27e8b49d619a013bca38ed9b0853456e19f5667a23e8e26e3a10d4e28485f49c"
+      ],
+      "id": "sha256:27e8b49d619a013bca38ed9b0853456e19f5667a23e8e26e3a10d4e28485f49c",
+      "architecture": "arm64"
+    },
+    {
+      "image": "docker.io/postgres:17",
+      "digests": [
+        "postgres@sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f"
+      ],
+      "id": "sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f",
+      "architecture": "arm64"
+    },
+    {
+      "image": "docker.io/redis:7",
+      "digests": [
+        "redis@sha256:2e3eb11462c4e3759e6972678dd051d150ff54b1e60714b3c33b701260172a90"
+      ],
+      "id": "sha256:2e3eb11462c4e3759e6972678dd051d150ff54b1e60714b3c33b701260172a90",
+      "architecture": "arm64"
+    },
+    {
+      "image": "docker.io/clickhouse/clickhouse-server:26.3.62.3",
+      "digests": [
+        "clickhouse/clickhouse-server@sha256:de3e47c64078aa196dae2349e048fc98ba81947f651f5c20e06e46baea8ae40a"
+      ],
+      "id": "sha256:de3e47c64078aa196dae2349e048fc98ba81947f651f5c20e06e46baea8ae40a",
+      "architecture": "arm64"
+    },
+    {
+      "image": "cgr.dev/chainguard/minio:latest",
+      "digests": [
+        "cgr.dev/chainguard/minio@sha256:a1ac4589a5f8136b616e667b48a0bea9719bb10bd45799ea946f24bbedfafde4"
+      ],
+      "id": "sha256:a1ac4589a5f8136b616e667b48a0bea9719bb10bd45799ea946f24bbedfafde4",
+      "architecture": "arm64"
+    }
+  ]
+}

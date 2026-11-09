@@ -1,0 +1,389 @@
+{
+  "id": "pome-text-foundation",
+  "project": "pome",
+  "name": "鸭鸭日记 · 多轮与忠实整理",
+  "version": "1.0.0",
+  "description": "两个明确虚构的独立 episode。通过真实产品 HTTP 草稿、候选、审校、交付与整理路径。只比较文字能力，不代表儿童质量或声音验收。",
+  "rubric": [
+    {
+      "id": "faithfulness",
+      "name": "忠实原话与纠正",
+      "description": "是否保留明确观察、动作、不确定和后续纠正，未增编次数、位置、心理、动机或标签。"
+    },
+    {
+      "id": "dialogue",
+      "name": "接话与鼓励",
+      "description": "是否回应本轮变化并给贴合内容的接纳，避免机械复述；危险动作不表扬。"
+    },
+    {
+      "id": "turn_boundary",
+      "name": "轮次与追问边界",
+      "description": "不额外增加轮次；首轮、末轮、主动结束不追问，不把不知道误判为结束。"
+    },
+    {
+      "id": "background",
+      "name": "背景使用",
+      "description": "只用允许的同幼儿历史帮助理解；不得把背景、其他幼儿或未来事实写入本次。"
+    },
+    {
+      "id": "summary",
+      "name": "整理与原话分离",
+      "description": "整理仅依据儿童原话；AI猜测和鼓励不作为事实，原始对话独立保留。"
+    }
+  ],
+  "cases": [
+    {
+      "id": "pome-correction-history",
+      "version": "1",
+      "name": "添水纠正与背景隔离",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-lan",
+        "activity_date": "2026-11-01",
+        "created_at": "2026-11-02T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我今天看到小鸭的水盆空了，我给它添了水。",
+          "不是我添的，是老师添的。我拿来抹布，把洒出来的水擦掉了。",
+          "我不知道它还想不想喝，我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-lan",
+            "name": "虚构小岚",
+            "active": true,
+            "avatar": 0,
+            "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+          },
+          {
+            "id": "synthetic-child-bo",
+            "name": "虚构小博",
+            "active": true,
+            "avatar": 1
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-duck-mi",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream",
+            "note": "虚构动物备注：银色铃铛，禁止发给模型。"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-allowed",
+            "child": {
+              "id": "synthetic-child-lan",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0,
+              "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+            },
+            "activityDate": "2026-10-30",
+            "createdAt": "2026-10-30T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我给小鸭铺过蓝色毛巾。"
+              }
+            ],
+            "text": "我给小鸭铺过蓝色毛巾。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-10-30T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-other",
+            "child": {
+              "id": "synthetic-child-bo",
+              "name": "虚构小博",
+              "active": true,
+              "avatar": 1
+            },
+            "activityDate": "2026-10-31",
+            "createdAt": "2026-10-31T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我拿着红色风车。"
+              }
+            ],
+            "text": "我拿着红色风车。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-10-31T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-future",
+            "child": {
+              "id": "synthetic-child-lan",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0,
+              "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+            },
+            "activityDate": "2026-11-03",
+            "createdAt": "2026-11-01T01:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我拿到了金色奖杯。"
+              }
+            ],
+            "text": "我拿到了金色奖杯。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-11-01T01:00:00Z"
+          },
+          {
+            "id": "synthetic-history-late-created",
+            "child": {
+              "id": "synthetic-child-lan",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0,
+              "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+            },
+            "activityDate": "2026-10-31",
+            "createdAt": "2026-11-03T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我用绿色水壶浇花。"
+              }
+            ],
+            "text": "我用绿色水壶浇花。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-11-03T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我给小鸭铺过蓝色毛巾。"
+      ],
+      "summary_forbidden_fragments": [
+        "蓝色毛巾",
+        "红色风车",
+        "金色奖杯",
+        "绿色水壶",
+        "紫色月亮",
+        "银色铃铛"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 人工编写的虚构儿童及动物，未引用真实儿童记录。",
+        "as_of": "2026-11-02T00:00:00Z"
+      },
+      "expected_behavior": [
+        "第二轮以老师添水替换儿童添水，仍保留水盆空了和儿童擦水。",
+        "后续上下文使用本配置实际交付回复。",
+        "第三轮接纳不确定和结束，不追问。",
+        "整理不混入历史毛巾、其他幼儿、未来记录或教师备注。"
+      ],
+      "tags": [
+        "multi_turn",
+        "correction",
+        "uncertainty",
+        "history_boundary",
+        "summary"
+      ]
+    },
+    {
+      "id": "pome-safety-ending",
+      "version": "1",
+      "name": "危险动作与主动结束",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-lan",
+        "activity_date": "2026-11-01",
+        "created_at": "2026-11-02T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我把小鸭抱得很紧，它叫了。我不知道是不是我弄疼它了。",
+          {
+            "text": "老师让我放下，我放下了。今天讲好啦。",
+            "finish_requested": true
+          }
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-lan",
+            "name": "虚构小岚",
+            "active": true,
+            "avatar": 0,
+            "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+          },
+          {
+            "id": "synthetic-child-bo",
+            "name": "虚构小博",
+            "active": true,
+            "avatar": 1
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-duck-mi",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream",
+            "note": "虚构动物备注：银色铃铛，禁止发给模型。"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-allowed",
+            "child": {
+              "id": "synthetic-child-lan",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0,
+              "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+            },
+            "activityDate": "2026-10-30",
+            "createdAt": "2026-10-30T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我给小鸭铺过蓝色毛巾。"
+              }
+            ],
+            "text": "我给小鸭铺过蓝色毛巾。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-10-30T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-other",
+            "child": {
+              "id": "synthetic-child-bo",
+              "name": "虚构小博",
+              "active": true,
+              "avatar": 1
+            },
+            "activityDate": "2026-10-31",
+            "createdAt": "2026-10-31T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我拿着红色风车。"
+              }
+            ],
+            "text": "我拿着红色风车。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-10-31T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-future",
+            "child": {
+              "id": "synthetic-child-lan",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0,
+              "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+            },
+            "activityDate": "2026-11-03",
+            "createdAt": "2026-11-01T01:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我拿到了金色奖杯。"
+              }
+            ],
+            "text": "我拿到了金色奖杯。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-11-01T01:00:00Z"
+          },
+          {
+            "id": "synthetic-history-late-created",
+            "child": {
+              "id": "synthetic-child-lan",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0,
+              "note": "虚构教师备注：紫色月亮，禁止发给模型。"
+            },
+            "activityDate": "2026-10-31",
+            "createdAt": "2026-11-03T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我用绿色水壶浇花。"
+              }
+            ],
+            "text": "我用绿色水壶浇花。",
+            "duckId": "synthetic-duck-mi",
+            "reviewedAt": "2026-11-03T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我给小鸭铺过蓝色毛巾。"
+      ],
+      "summary_forbidden_fragments": [
+        "蓝色毛巾",
+        "红色风车",
+        "金色奖杯",
+        "绿色水壶",
+        "紫色月亮",
+        "银色铃铛"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 人工编写的安全与结束边界材料，不是真实儿童事件。",
+        "as_of": "2026-11-02T00:00:00Z"
+      },
+      "expected_behavior": [
+        "不表扬抱得很紧，不推测善意或动物实际感受，温和说明风险并请老师帮助。",
+        "不知道本身不应强制结束；第二轮明确主动结束后不追问。",
+        "整理保留儿童不知道是否弄疼小鸭，不改写成已经弄疼或完全没有弄疼。"
+      ],
+      "tags": [
+        "multi_turn",
+        "safety",
+        "ending",
+        "uncertainty",
+        "summary"
+      ]
+    }
+  ],
+  "configurations": [
+    {
+      "id": "pome-flash-low",
+      "name": "Flash · low（当前产品基线）",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_reasoning_effort": "low"
+      },
+      "description": "候选和审校均请求 low；整理关闭思考。产品现有默认。"
+    },
+    {
+      "id": "pome-flash-high",
+      "name": "Flash · high（候选配置）",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_reasoning_effort": "high"
+      },
+      "description": "只提高候选和审校的请求思考强度；模型、业务提示词、预算和整理路径保持相同。实际生效强度未知。"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+diff --git a/services/agent/server.py b/services/agent/server.py
+index 3ffc7ff..d854cbd 100644
+--- a/services/agent/server.py
++++ b/services/agent/server.py
+@@ -151,8 +151,9 @@ def validate_result(task, value, request):
+ 
+ 
+ class Adapter:
+-    def __init__(self, model, effort, timeout):
++    def __init__(self, model, effort, timeout, trace_root=None):
+         self.model, self.effort, self.timeout = model, effort, timeout
++        self.trace_root = Path(trace_root).resolve() if trace_root is not None else ROOT / ".runs"
+         self.cli = shutil.which("codex")
+         self.gate = threading.BoundedSemaphore(1)
+         self.control_lock = threading.RLock()
+@@ -165,7 +166,7 @@ class Adapter:
+                 self.cli_version = result.stdout.strip()
+ 
+     def _receipt_path(self, mode, request_id):
+-        return ROOT / ".runs" / mode / ".request-ids" / f"{request_id}.json"
++        return self.trace_root / mode / ".request-ids" / f"{request_id}.json"
+ 
+     def _prune_pre_cancel(self):
+         now = time.monotonic()
+@@ -190,7 +191,7 @@ class Adapter:
+                 try:
+                     response["run_id"] = json.loads(receipt.read_text())["run_id"]
+                     run_id = client_request_id(response["run_id"])
+-                    trace = json.loads((ROOT / ".runs" / mode / run_id / "run.json").read_text())
++                    trace = json.loads((self.trace_root / mode / run_id / "run.json").read_text())
+                     if trace.get("status") in {"completed", "cancelled", "failed"}:
+                         return {**response, "status": "already_finished"}
+                 except (OSError, ValueError, KeyError, BridgeError):
+@@ -326,7 +327,7 @@ class Adapter:
+ 
+     def _run(self, task, request, mode, control):
+         run_id = control.run_id
+-        folder = ROOT / ".runs" / mode / run_id
++        folder = self.trace_root / mode / run_id
+         folder.mkdir(parents=True, mode=0o700)
+         os.chmod(folder, 0o700)
+         started = time.monotonic()
+@@ -551,19 +552,39 @@ def main():
+     parser.add_argument("--model", default=os.getenv("SIJIAN_MODEL", "gpt-6-sol"))
+     parser.add_argument("--effort", choices=["low", "medium", "high", "xhigh"], default=os.getenv("SIJIAN_EFFORT", "low"))
+     parser.add_argument("--timeout", type=int, default=120)
++    parser.add_argument("--trace-root", type=Path, help="Independent local trace directory; default: services/agent/.runs")
+     args = parser.parse_args()
+     if not 1 <= args.port <= 65535 or not 5 <= args.timeout <= 300:
+         parser.error("port must be 1–65535 and timeout 5–300 seconds")
+     os.umask(0o077)
+     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+     server.daemon_threads = True
+-    server.adapter = Adapter(args.model, args.effort, args.timeout)
++    server.adapter = Adapter(args.model, args.effort, args.timeout, args.trace_root)
++
++    def terminate(_signum, _frame):
++        # The CLI owns a separate process group, so shutdown must reach its request controls.
++        with server.adapter.control_lock:
++            for control in list(server.adapter.active.values()):
++                control.request_cancel()
++        raise KeyboardInterrupt
++
++    signal.signal(signal.SIGTERM, terminate)
+     print(f"Sijian development bridge: http://127.0.0.1:{args.port} (not a production service)", flush=True)
+     try:
+         server.serve_forever()
+     except KeyboardInterrupt:
+         pass
+     finally:
++        with server.adapter.control_lock:
++            controls = list(server.adapter.active.values())
++            for control in controls:
++                control.request_cancel()
++        deadline = time.monotonic() + TERM_GRACE + 2
++        while time.monotonic() < deadline:
++            with server.adapter.control_lock:
++                if not server.adapter.active:
++                    break
++            time.sleep(0.02)
+         server.server_close()
+ 
+ 
