@@ -13,3 +13,5 @@
 MyEval 公共源码由主脑整合。Sijian 和 pome 的最小共享接口仍是各产品工作树的未提交改动，[补丁副本](../integrations/README.md) 随 MyEval 保留；pome 用户文档与 Sijian V13 未改。无外部发布或 GitHub 推送。
 
 子智能体是本会话内部任务，并非侧栏可见独立主脑会话。产品历史基线和暂停声音线保持保护。
+
+2026-11-09 补充：pome 任务包已升级到 1.1.0，保留原 low/high，新增全链路思考开启/关闭与两个独立虚构情境。一次短混合模式 canary 已真实核对新增参数路径；正式 4 × 2 × 2 比较由母会话通过 UI 启动，尚不计入上面的首版结果。就绪入口为 `.local/coordination/thinking-toggle-ready.json`，接口与证据说明见 [pome 适配文档](adapter-pome.md)。

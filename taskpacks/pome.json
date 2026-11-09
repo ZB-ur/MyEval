@@ -2,8 +2,8 @@
   "id": "pome-text-foundation",
   "project": "pome",
   "name": "鸭鸭日记 · 多轮与忠实整理",
-  "version": "1.0.0",
-  "description": "两个明确虚构的独立 episode。通过真实产品 HTTP 草稿、候选、审校、交付与整理路径。只比较文字能力，不代表儿童质量或声音验收。",
+  "version": "1.1.0",
+  "description": "四个明确虚构的独立 episode。通过真实产品 HTTP 草稿、候选、审校、交付与整理路径；保留原 low/high，新增三个阶段统一开启或关闭思考的对照。仅文字材料，不代表真实儿童质量或声音验收。",
   "rubric": [
     {
       "id": "faithfulness",
@@ -18,7 +18,7 @@
     {
       "id": "turn_boundary",
       "name": "轮次与追问边界",
-      "description": "不额外增加轮次；首轮、末轮、主动结束不追问，不把不知道误判为结束。"
+      "description": "不额外增加轮次；首轮、末轮、主动结束不追问；区分不知道、否定结束、第三方结束引语与儿童本人的结束意愿。"
     },
     {
       "id": "background",
@@ -360,6 +360,122 @@
         "uncertainty",
         "summary"
       ]
+    },
+    {
+      "id": "pome-uncertain-cause",
+      "version": "1",
+      "name": "不确定原因不补编",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-an",
+        "activity_date": "2026-11-01",
+        "created_at": "2026-11-02T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我今天把小鸭的水盆放到墙边，它走开了。",
+          "我不知道它为什么走开，也不知道它是不是害怕。",
+          "后来我坐在旁边看着它。我没有再碰它，我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-an",
+            "name": "虚构小安",
+            "active": true,
+            "avatar": 2
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-duck-dou",
+            "name": "豆豆",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": []
+      },
+      "expected_background_texts": [],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为思考开关对照新编的虚构儿童与动物情境，未引用真实儿童记录。",
+        "as_of": "2026-11-02T00:00:00Z"
+      },
+      "expected_behavior": [
+        "保留水盆放到墙边、小鸭走开和儿童后来坐在旁边看着的实际陈述；不增加接触或安抚动作。",
+        "第二轮明确不知道原因和是否害怕，应保留两项不确定；不能补编被吓到、不喜欢水盆或躲避儿童等原因。",
+        "前两轮不因不知道而提前结束；第三轮正常回应后结束，不追问。",
+        "整理保留后来没有再碰小鸭的否定事实；AI解释、安慰和可能性不得变成儿童观察事实。"
+      ],
+      "tags": [
+        "multi_turn",
+        "uncertainty",
+        "causality",
+        "negation",
+        "summary"
+      ]
+    },
+    {
+      "id": "pome-ending-negation-quote",
+      "version": "1",
+      "name": "否定结束与第三方引语",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-qiao",
+        "activity_date": "2026-11-01",
+        "created_at": "2026-11-02T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我还没讲完。我今天把小鸭的水盆拿到门边。",
+          "小明说“我讲完了”，我还想说小鸭的事。我看见它站在门边。",
+          "后来我把水盆放回去了。现在我讲完了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-qiao",
+            "name": "虚构小乔",
+            "active": true,
+            "avatar": 2
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-duck-dou",
+            "name": "豆豆",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": []
+      },
+      "expected_background_texts": [],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为思考开关对照新编的虚构儿童与动物情境，未引用真实儿童记录。",
+        "as_of": "2026-11-02T00:00:00Z"
+      },
+      "expected_behavior": [
+        "第一轮的还没讲完是否定结束，不应返回 endConversation=true。",
+        "第二轮引述小明说我讲完了，儿童本人明确还想说，不应结束或跳过第三轮。",
+        "第三轮保留把水盆放回去的新增行动，再按本人结束意愿和轮数上限收尾，不追加问题。",
+        "整理区分儿童行动与小明的引语，不将他人的结束表达归到儿童头上；不增加动物行动或动机。"
+      ],
+      "tags": [
+        "multi_turn",
+        "ending",
+        "negation",
+        "third_party_quote",
+        "summary"
+      ]
     }
   ],
   "configurations": [
@@ -384,6 +500,32 @@
         "chat_reasoning_effort": "high"
       },
       "description": "只提高候选和审校的请求思考强度；模型、业务提示词、预算和整理路径保持相同。实际生效强度未知。"
+    },
+    {
+      "id": "pome-flash-thinking-on",
+      "name": "DeepSeek Flash · 思考开启（low，全链路）",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_thinking": "enabled",
+        "chat_reasoning_effort": "low",
+        "summary_thinking": "enabled",
+        "summary_reasoning_effort": "low"
+      },
+      "description": "候选、审校、整理均显式开启思考并请求 low；候选/审校各 4096、整理 2048 token 上限。与关闭配置使用相同提示词、状态、重试及时间预算；生效值未回显则未知。"
+    },
+    {
+      "id": "pome-flash-thinking-off",
+      "name": "DeepSeek Flash · 思考关闭（全链路）",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_thinking": "disabled",
+        "summary_thinking": "disabled"
+      },
+      "description": "候选、审校、整理均显式关闭思考，不发送 reasoning_effort；token 上限、提示词、状态、重试及时间预算与开启配置相同；不预设质量或时延优劣。"
     }
   ]
 }

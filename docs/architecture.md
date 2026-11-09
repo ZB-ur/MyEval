@@ -15,7 +15,7 @@ SQLite 在首次调度前记录所有 trial。每次尝试的 request/result/eve
 ## 共享业务边界
 
 - Sijian：启动原产品 `services/agent/server.py`，调用真实发现/复盘校验、提示词和 CLI；最小产品改动只有 `--trace-root` 和退出回收。V13/历史评测参考字节不变。
-- pome：同一产品 Handler/Store/API，增加可选的内存 runtime_settings、白名单 observation sink 与候选/审校 effort 覆盖；正常入口不装 sink，原有默认 low、提示词、声音及用户资料不变。每个配置的后续轮次使用自身实际交付 final，候选只作轨迹，不进儿童上下文。完成后通过真实状态 API 保存并复读。
+- pome：同一产品 Handler/Store/API，增加可选的内存 runtime_settings、白名单 observation sink，以及候选/审校和整理的 thinking/effort 覆盖；正常入口不装 sink，原有接话 enabled+low、整理 disabled、提示词、声音及用户资料不变。每个配置的后续轮次使用自身实际交付 final，候选只作轨迹，不进儿童上下文。完成后通过真实状态 API 保存并复读。
 - 新项目增加 `myeval/adapters/<project>.py` 与任务包；公共 runner、实验、盲评及导出不写项目质量规则。
 
 ## 证据与评价

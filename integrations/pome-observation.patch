@@ -1,5 +1,5 @@
 diff --git a/backend/app.py b/backend/app.py
-index 80baddb..605cb29 100644
+index 80baddb..4b4aa29 100644
 --- a/backend/app.py
 +++ b/backend/app.py
 @@ -16,6 +16,7 @@ import webbrowser
@@ -32,19 +32,37 @@ index 80baddb..605cb29 100644
  
      def save_settings(self, value):
          if not isinstance(value, dict) or set(value) - set(SETTING_KEYS) - {'apiKey', 'clearApiKey', 'conversationRounds', 'speechRate'}:
-@@ -737,7 +742,10 @@ class Handler(BaseHTTPRequestHandler):
-                 # Prompt instructions alone do not enforce the JSON envelope.
-                 payload['response_format'] = {'type': 'json_object'}
-                 payload['thinking'] = {'type': 'enabled'}
--                payload['reasoning_effort'] = 'low'
-+                effort = getattr(self.server, 'ai_options', {}).get('chat_reasoning_effort', 'low')
+@@ -731,28 +736,50 @@ class Handler(BaseHTTPRequestHandler):
+             messages = [messages[0], {'role': 'user', 'content': encode({'transcript': [turn for turn in turns if turn['role'] != 'system']}).decode()}]
+         payload = {'model': settings.get('chatModel'), 'messages': messages}
+         if urlsplit(settings.get('providerBaseUrl', '')).hostname == 'api.deepseek.com':
+-            payload['thinking'] = {'type': 'disabled'}
+-            payload['max_tokens'] = 2048
++            operation = 'chat' if path == '/api/chat' else 'summary'
++            options = getattr(self.server, 'ai_options', {})
++            thinking = options.get(operation + '_thinking', 'enabled' if operation == 'chat' else 'disabled')
++            if thinking not in ('enabled', 'disabled'):
++                raise APIError(400, '服务的思考开关设置无效。')
++            payload['thinking'] = {'type': thinking}
++            payload['max_tokens'] = 4096 if operation == 'chat' else 2048
++            if thinking == 'enabled':
++                effort = options.get(operation + '_reasoning_effort', 'low')
 +                if effort not in ('low', 'high', 'max'):
 +                    raise APIError(400, '服务的思考强度设置无效。')
 +                payload['reasoning_effort'] = effort
-                 # Thinking and visible output share the budget. Keep room for
-                 # reasoning so a short spoken response is not truncated.
-                 payload['max_tokens'] = 4096
-@@ -747,12 +755,27 @@ class Handler(BaseHTTPRequestHandler):
+             if path == '/api/chat':
+                 # Prompt instructions alone do not enforce the JSON envelope.
+                 payload['response_format'] = {'type': 'json_object'}
+-                payload['thinking'] = {'type': 'enabled'}
+-                payload['reasoning_effort'] = 'low'
+-                # Thinking and visible output share the budget. Keep room for
+-                # reasoning so a short spoken response is not truncated.
+-                payload['max_tokens'] = 4096
++            # Both modes keep the existing token ceilings. Disabled requests
++            # omit reasoning_effort; review inherits the candidate payload.
+         # Chat has two successful stages and one shared failure retry: at most
+         # three provider calls. Summary remains one stage plus one retry.
+         # All stages share the remaining budget and never mutate stored turns.
          started = time.monotonic()
          stage = 'candidate' if path == '/api/chat' else 'summary'
          failures = 0
@@ -72,7 +90,7 @@ index 80baddb..605cb29 100644
                  choices = result.get('choices')
                  if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
                      raise APIError(502, 'AI 这次没有说清楚，可以重试。', True)
-@@ -782,6 +805,8 @@ class Handler(BaseHTTPRequestHandler):
+@@ -782,6 +809,8 @@ class Handler(BaseHTTPRequestHandler):
                      except (ValueError, TypeError):
                          raise APIError(502, '这次的回应没有准备好，请重试。', True) from None
                      text = spoken_reply(envelope)
@@ -81,7 +99,7 @@ index 80baddb..605cb29 100644
                      if stage == 'candidate':
                          review_data = {'transcript': [{'role': t['role'], 'text': t['text']}
                                                        for t in turns if t['role'] != 'system'],
-@@ -797,6 +822,10 @@ class Handler(BaseHTTPRequestHandler):
+@@ -797,6 +826,10 @@ class Handler(BaseHTTPRequestHandler):
                  break
              except APIError as exc:
                  failures += 1
@@ -92,7 +110,7 @@ index 80baddb..605cb29 100644
                  if not exc.retryable or failures > 1 or time.monotonic() - started >= 70:
                      raise
                  print('AI transient retry: ' + stage, file=sys.stderr, flush=True)
-@@ -809,8 +838,12 @@ class Handler(BaseHTTPRequestHandler):
+@@ -809,8 +842,12 @@ class Handler(BaseHTTPRequestHandler):
                  question = re.split(r'(?<=[。！？!?\n])', question)[0].strip()
                  if question.endswith(('？', '?')):
                      text += question
@@ -107,9 +125,12 @@ index 80baddb..605cb29 100644
  
  
  def default_directory():
+diff --git a/backend/evaluation.py b/backend/evaluation.py
+new file mode 100644
+index 0000000..1c1292d
 --- /dev/null
 +++ b/backend/evaluation.py
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,54 @@
 +"""Optional observation seam for the real text pipeline.
 +
 +No sink is installed by the normal product entrypoint. An explicitly isolated
@@ -158,6 +179,9 @@ index 80baddb..605cb29 100644
 +        'finish_reason': choice.get('finish_reason'),
 +        'content': message.get('content') if isinstance(message.get('content'), str) else None,
 +        'refusal': message.get('refusal') if isinstance(message.get('refusal'), str) else None,
++        'reasoning_field_present': 'reasoning_content' in message,
++        'reasoning_content_nonempty': isinstance(message.get('reasoning_content'), str) and bool(message['reasoning_content']),
 +        'usage': counts or None,
 +        'effective_reasoning_effort': None,
++        'effective_thinking': None,
 +    }

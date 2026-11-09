@@ -46,7 +46,7 @@ scripts/platform-stop
 | 项目 | 实际路径与配置 | 能力限制 |
 | --- | --- | --- |
 | Sijian | 真实 `/discover`、`/review`；`gpt-6-sol` low / medium；固定上下文重跑 | 开发期 Codex CLI 登录；有效 model/effort 未回显。独立 bridge 端口与 trace-root，不修改 V13，不包含 iOS/语音旅程 |
-| pome | 正式草稿、`/api/chat` 候选→审校→最终回复、`/api/summary`、`/api/state` 保存；Flash low / high | 每配置沿用自己的实际 final 上下文；独立 SQLite，凭据仅内存注入。文本 HTTP 不等于儿童端自动保存/声音验收；远端取消 unsupported |
+| pome | 正式草稿、`/api/chat` 候选→审校→最终回复、`/api/summary`、`/api/state` 保存；原 Flash low/high，新增全链路思考开/关 | 每配置沿用自己的实际 final 上下文；独立 SQLite，凭据仅内存注入。文本 HTTP 不等于儿童端自动保存/声音验收；远端取消 unsupported |
 
 已有授权凭据仅由适配器在必要执行边界读取，不出现在 UI、导出、日志或 Git。pome 默认优先现有产品数据目录，当前本机使用已授权的历史隔离设置库；可用 `MYEVAL_POME_CREDENTIAL_DB` 指定授权来源。不得把真实儿童或个人材料自行加入首版执行。源码路径可通过 `MYEVAL_SIJIAN_ROOT` / `MYEVAL_POME_ROOT` 指定。
 

@@ -18,7 +18,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, ProxyHandler
 
-ADAPTER_VERSION = 'pome-http-1'
+ADAPTER_VERSION = 'pome-http-2'
 DEFAULT_ROOT = Path('/Users/lddmay/AiCoding/pomegranagent-v2')
 LIMITATIONS = [
     '仅虚构文字 HTTP 旅程；没有执行儿童端浏览器自动保存、语音倒计时、ASR、TTS 或真人儿童质量验收。',
@@ -48,6 +48,24 @@ def _git(root, *args):
     return result.stdout if result.returncode == 0 else b''
 
 
+def _requested(configuration):
+    parameters = configuration.get('parameters', {})
+    if not isinstance(parameters, dict) or parameters.get('model', 'deepseek-flash') != 'deepseek-flash':
+        raise ValueError('unsupported_configuration')
+    requested = {'model': parameters.get('model', 'deepseek-flash'),
+                 'chat_max_tokens': 4096, 'summary_max_tokens': 2048}
+    for operation, default in [('chat', 'enabled'), ('summary', 'disabled')]:
+        thinking = parameters.get(operation + '_thinking', default)
+        if thinking not in ('enabled', 'disabled'):
+            raise ValueError('unsupported_configuration')
+        effort = parameters.get(operation + '_reasoning_effort', 'low' if thinking == 'enabled' else None)
+        if (thinking == 'enabled' and effort not in ('low', 'high', 'max')) or (thinking == 'disabled' and effort is not None):
+            raise ValueError('unsupported_configuration')
+        requested[operation + '_thinking'] = thinking
+        requested[operation + '_reasoning_effort'] = effort
+    return requested
+
+
 def describe(configuration):
     root = _root()
     files = ['server.py', 'backend/app.py', 'backend/evaluation.py', 'backend/local_voice.py']
@@ -59,7 +77,7 @@ def describe(configuration):
                 for name in node.targets:
                     if isinstance(name, ast.Name) and name.id in ('PROMPT', 'REVIEW_PROMPT', 'SUMMARY_PROMPT'):
                         prompts[name.id] = _sha(ast.literal_eval(node.value).encode())
-    parameters = configuration.get('parameters', {})
+    requested = _requested(configuration)
     return {
         'adapter': ADAPTER_VERSION, 'project': 'pome', 'source_root': str(root),
         'environment': {'python': sys.version, 'platform': sys.platform, 'transport': 'stdlib HTTP on loopback'},
@@ -68,11 +86,9 @@ def describe(configuration):
         'source_files_sha256': hashes, 'prompt_sha256': prompts,
         'adapter_sha256': _sha(Path(__file__).read_bytes()),
         'entrypoints': ['/api/state', '/api/chat', '/api/summary'],
-        'requested': {'model': parameters.get('model', 'deepseek-flash'),
-                      'chat_thinking': 'enabled',
-                      'chat_reasoning_effort': parameters.get('chat_reasoning_effort', 'low'),
-                      'chat_max_tokens': 4096, 'summary_thinking': 'disabled', 'summary_max_tokens': 2048},
-        'effective': {'model': None, 'chat_reasoning_effort': None, 'thinking': None},
+        'requested': requested,
+        'effective': {'model': None, 'chat_reasoning_effort': None, 'summary_reasoning_effort': None,
+                      'chat_thinking': None, 'summary_thinking': None},
         'capabilities': {'multi_turn': 'supported', 'audio': 'unsupported',
                          'cancel_local_wait': 'supported', 'cancel_provider': 'unsupported',
                          'environment_reset': 'supported', 'state_snapshot': 'supported',
@@ -227,16 +243,14 @@ def run(case, configuration, ctx):
                     'error': {'code': 'unsupported_mode', 'message': 'pome 首版支持隔离环境完整文字执行。'}}
         if case.get('task') != 'dialogue_and_summary':
             raise RuntimeError('unsupported_task')
-        parameters = configuration.get('parameters', {})
-        if parameters.get('model', 'deepseek-flash') != 'deepseek-flash' or parameters.get('chat_reasoning_effort', 'low') not in ('low', 'high', 'max'):
-            raise RuntimeError('unsupported_configuration')
+        requested = _requested(configuration)
         if case.get('source', {}).get('synthetic') is not True:
             raise RuntimeError('synthetic_material_required')
         product_root = _root()
         source = _credential_source(product_root)
         source_hash = _source_state_hash(source)
         credentials = _read_credentials(source)
-        credentials['chatModel'] = parameters.get('model', 'deepseek-flash')
+        credentials['chatModel'] = requested['model']
         fixture = copy.deepcopy(case['input'])
         children = copy.deepcopy(case['initial_state']['children'])
         child = next(c for c in children if c['id'] == fixture['child_id'])
@@ -257,7 +271,8 @@ def run(case, configuration, ctx):
         # Text execution deliberately leaves audio uninitialised. It does not
         # stub chat/summary, inspect recordings, or resume the paused audio work.
         server.local_voice = app.LocalVoice(product_root / 'models')
-        server.ai_options = {'chat_reasoning_effort': parameters.get('chat_reasoning_effort', 'low')}
+        server.ai_options = {key: value for key, value in requested.items()
+                             if key in ('chat_thinking', 'chat_reasoning_effort', 'summary_thinking', 'summary_reasoning_effort') and value is not None}
         server.ai_observer = observe
         server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
@@ -359,7 +374,7 @@ def run(case, configuration, ctx):
     except Exception as exc:
         known = {'missing_credentials': '缺少已授权的 pome 本机服务配置。可用 MYEVAL_POME_CREDENTIAL_DB 指定含设置的本机数据库。',
                  'unsupported_provider': '该适配器首版仅接入已授权的 DeepSeek 官方服务。',
-                 'unsupported_configuration': '首版支持 deepseek-flash 的 low/high/max 文字配置。',
+                 'unsupported_configuration': '支持 DeepSeek Flash 的显式思考开/关；开启需 low/high/max，关闭不携带思考强度。',
                  'unsupported_task': '不支持此任务类型。',
                  'synthetic_material_required': '首版执行仅允许明确标注的虚构材料。',
                  'product_observation_seam_missing': '产品源码缺少本次共享观测接口。'}
@@ -393,7 +408,7 @@ def run(case, configuration, ctx):
         usage = {'calls_requested': len(requests), 'calls_with_response': len(responses),
                  'calls_with_usage': sum(bool(e['data'].get('usage')) for e in responses),
                  'complete': len(requests) == len(responses) and all(e['data'].get('usage') for e in responses)}
-        for field in ('prompt_tokens', 'completion_tokens', 'total_tokens'):
+        for field in ('prompt_tokens', 'completion_tokens', 'total_tokens', 'reasoning_tokens'):
             values = [e['data'].get('usage', {}).get(field) if e['data'].get('usage') else None for e in responses]
             usage[field] = sum(values) if all(type(x) is int for x in values) and len(requests) == len(responses) else None
     output['model_call_count'] = len(requests)
