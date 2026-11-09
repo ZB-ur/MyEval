@@ -53,6 +53,9 @@ class Store:
                     "SELECT body FROM attempts WHERE trial_id=? ORDER BY number", (identifier,))]
                 result["assessment_records"] = [json.loads(r[0]) for r in self.db.execute(
                     "SELECT body FROM assessment_records WHERE trial_id=?", (identifier,))]
+                for record in result["assessment_records"]:
+                    record["current_result"] = (record.get("execution_attempt") == result["attempt"]
+                        and record.get("result_hash") == digest(result.get("result")))
             return result
 
     def trials(self, experiment_id=None):
@@ -256,7 +259,7 @@ class Store:
                 revision = digest({"presentation_id": presentation["id"], "identity": identity})
                 # Strict allow-list projection: no configuration, trial IDs, provenance, paths, usage, or traces.
                 case = left["case"]
-                pairs.append({"id": presentation["id"], "case": {k: case.get(k) for k in ["name", "task", "input", "source", "expected_behavior"]},
+                pairs.append({"id": presentation["id"], "case": {k: case.get(k) for k in ["name", "task", "input", "initial_state", "source", "expected_behavior"]},
                               "repeat_index": presentation["repeat_index"], "ready": ready, "revision": revision,
                               "A": {"status": left["status"], "output": (left.get("result") or {}).get("review_output")} if ready else None,
                               "B": {"status": right["status"], "output": (right.get("result") or {}).get("review_output")} if ready else None,
@@ -336,7 +339,42 @@ class Store:
                 group["rule_dimensions"].setdefault(assessment.get("dimension", "unnamed"), Counter())[assessment.get("status", "unknown")] += 1
         with self.lock:
             rows = self.db.execute("SELECT r.body,p.left_id,p.right_id,p.case_id,p.repeat_index FROM reviews r JOIN presentations p ON p.id=r.presentation_id JOIN reviewers v ON p.token=v.token WHERE v.experiment_id=?", (experiment_id,)).fetchall()
-            model_count = self.db.execute("SELECT count(*) FROM assessment_records a JOIN trials t ON t.id=a.trial_id WHERE t.experiment_id=?", (experiment_id,)).fetchone()[0]
+            model_rows = self.db.execute("SELECT a.trial_id,a.body FROM assessment_records a JOIN trials t ON t.id=a.trial_id WHERE t.experiment_id=?", (experiment_id,)).fetchall()
+        model_dimensions = []
+        current_trials = {t['id']: t for t in trials}
+        model_groups, group_dimensions = {}, {}
+        for row in model_rows:
+            record, trial = json.loads(row[1]), current_trials[row[0]]
+            # Earlier-attempt assessments stay in the archive but cannot score a new result.
+            if record.get('execution_attempt') != trial['attempt'] or record.get('result_hash') != digest(trial.get('result')):
+                continue
+            key = (record['evaluator'], record['rubric_version'], trial['configuration_id'])
+            model_groups.setdefault(key, []).append((row[0], record))
+            value = record.get('value')
+            scores = value.get('scores', {}) if isinstance(value, dict) else {}
+            if isinstance(scores, dict):
+                group_dimensions.setdefault(key[:2], set()).update(scores)
+        for evaluator, rubric in list(group_dimensions):
+            for configuration_id in configs:
+                model_groups.setdefault((evaluator, rubric, configuration_id), [])
+        for (evaluator, rubric, configuration_id), records in model_groups.items():
+            for dimension in sorted(group_dimensions.get((evaluator, rubric), [])):
+                distribution, unrated, scored_trials = Counter(), 0, set()
+                for trial_id, record in records:
+                    value = record.get('value')
+                    scores = value.get('scores', {}) if isinstance(value, dict) else {}
+                    score = scores.get(dimension) if isinstance(scores, dict) else None
+                    if type(score) in (int, float):
+                        distribution[str(score)] += 1
+                        scored_trials.add(trial_id)
+                    else:
+                        unrated += 1
+                covered = len({trial_id for trial_id, _ in records})
+                model_dimensions.append({'evaluator': evaluator, 'rubric_version': rubric,
+                    'configuration_id': configuration_id, 'dimension': dimension, 'distribution': dict(distribution),
+                    'unrated': unrated, 'records': len(records), 'covered_trials': covered,
+                    'scored_trials': len(scored_trials), 'total_trials': configs[configuration_id]['trials'],
+                    'unreviewed_trials': configs[configuration_id]['trials'] - covered})
         review_counts = {"human": Counter(), "acceptance": Counter()}
         preferences = {}
         dimensions = {}
@@ -359,7 +397,9 @@ class Store:
             group["attempt_statuses"] = dict(group["attempt_statuses"])
             group["rule_dimensions"] = {k: dict(v) for k, v in group["rule_dimensions"].items()}
         return {"configurations": configs, "reviews": {k: dict(v) for k, v in review_counts.items()}, "dimensions": {k: dict(v) for k, v in dimensions.items()},
-                "disagreement_pairs": sum(len(v) > 1 for v in preferences.values()), "model_assessments": model_count,
+                "disagreement_pairs": sum(len(v) > 1 for v in preferences.values()), "model_assessments": len(model_rows),
+                "model_dimensions": model_dimensions,
+                "current_model_assessments": sum(len(records) for records in model_groups.values()),
                 "independent_cases": len({t["case_id"] for t in trials}), "paired_units": len(trials) // 2,
                 "execution_attempts": sum(sum(g["attempt_statuses"].values()) for g in configs.values()),
                 "all_trials_in_denominator": len(trials), "note": "重复采样不增加独立案例数；规则、模型评价、人工偏好分别报告，不合成总分。"}
@@ -368,7 +408,8 @@ class Store:
         trial = self.trial(trial_id)
         if trial["status"] not in TERMINAL:
             raise ValueError("终态结果才能关联外部模型评价")
-        if body.get("kind") != "model" or not body.get("evaluator") or not body.get("rubric_version") or not body.get("reason"):
+        if body.get("kind") != "model" or any(not isinstance(body.get(k), str) or not body[k].strip()
+                for k in ('evaluator', 'rubric_version', 'reason')):
             raise ValueError("导入模型评价需 kind=model、evaluator、rubric_version 和 reason；不能冒充人工评价")
         record = {"id": uid(), "created_at": now(), "source": "external_import", "execution_attempt": trial["attempt"], "result_hash": digest(trial["result"]), **{k: body[k] for k in ["kind", "evaluator", "rubric_version", "reason", "value", "evidence"] if k in body}}
         with self.lock, self.db:

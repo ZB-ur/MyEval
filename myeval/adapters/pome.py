@@ -18,7 +18,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, ProxyHandler
 
-ADAPTER_VERSION = 'pome-http-2'
+ADAPTER_VERSION = 'pome-http-3'
 DEFAULT_ROOT = Path('/Users/lddmay/AiCoding/pomegranagent-v2')
 LIMITATIONS = [
     '仅虚构文字 HTTP 旅程；没有执行儿童端浏览器自动保存、语音倒计时、ASR、TTS 或真人儿童质量验收。',
@@ -54,6 +54,10 @@ def _requested(configuration):
         raise ValueError('unsupported_configuration')
     requested = {'model': parameters.get('model', 'deepseek-flash'),
                  'chat_max_tokens': 4096, 'summary_max_tokens': 2048}
+    profile = parameters.get('dialogue_profile', 'baseline')
+    if profile not in ('baseline', 'grounded-v1', 'contextual-v1'):
+        raise ValueError('unsupported_dialogue_profile')
+    requested['dialogue_profile'] = profile
     for operation, default in [('chat', 'enabled'), ('summary', 'disabled')]:
         thinking = parameters.get(operation + '_thinking', default)
         if thinking not in ('enabled', 'disabled'):
@@ -68,7 +72,7 @@ def _requested(configuration):
 
 def describe(configuration):
     root = _root()
-    files = ['server.py', 'backend/app.py', 'backend/evaluation.py', 'backend/local_voice.py']
+    files = ['server.py', 'backend/app.py', 'backend/evaluation.py', 'backend/local_voice.py', 'backend/agent_profiles.py']
     hashes = {name: _sha((root / name).read_bytes()) if (root / name).is_file() else None for name in files}
     prompts = {}
     if (root / 'backend/app.py').is_file():
@@ -78,12 +82,25 @@ def describe(configuration):
                     if isinstance(name, ast.Name) and name.id in ('PROMPT', 'REVIEW_PROMPT', 'SUMMARY_PROMPT'):
                         prompts[name.id] = _sha(ast.literal_eval(node.value).encode())
     requested = _requested(configuration)
+    profile_metadata = None
+    if (root / 'backend/agent_profiles.py').is_file():
+        sys.path.insert(0, str(root))
+        try:
+            app = importlib.import_module('backend.app')
+        finally:
+            sys.path.remove(str(root))
+        if Path(app.__file__).resolve() != (root / 'backend/app.py').resolve():
+            raise RuntimeError('product_source_mismatch')
+        profile_metadata = app.describe_dialogue_profiles()[requested['dialogue_profile']]
+    elif requested['dialogue_profile'] != 'baseline':
+        raise RuntimeError('product_dialogue_profile_seam_missing')
     return {
         'adapter': ADAPTER_VERSION, 'project': 'pome', 'source_root': str(root),
         'environment': {'python': sys.version, 'platform': sys.platform, 'transport': 'stdlib HTTP on loopback'},
         'code_head': _git(root, 'rev-parse', 'HEAD').decode().strip() or None,
         'dirty_diff_sha256': _sha(_git(root, 'diff', 'HEAD', '--', *files)),
         'source_files_sha256': hashes, 'prompt_sha256': prompts,
+        'dialogue_profile': profile_metadata,
         'adapter_sha256': _sha(Path(__file__).read_bytes()),
         'entrypoints': ['/api/state', '/api/chat', '/api/summary'],
         'requested': requested,
@@ -272,7 +289,7 @@ def run(case, configuration, ctx):
         # stub chat/summary, inspect recordings, or resume the paused audio work.
         server.local_voice = app.LocalVoice(product_root / 'models')
         server.ai_options = {key: value for key, value in requested.items()
-                             if key in ('chat_thinking', 'chat_reasoning_effort', 'summary_thinking', 'summary_reasoning_effort') and value is not None}
+                             if key in ('chat_thinking', 'chat_reasoning_effort', 'summary_thinking', 'summary_reasoning_effort', 'dialogue_profile') and value is not None}
         server.ai_observer = observe
         server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
