@@ -1,0 +1,23 @@
+{
+  "project": "demo",
+  "dataset_id": "office-cli-example",
+  "dataset_version_id": "1.0.0",
+  "split": "development",
+  "title": "CLI 练习 · 办公回复三方案",
+  "purpose": "scripted_offline_cli_example_no_model_calls",
+  "case_ids": [
+    "demo-meeting-v1",
+    "demo-release-v1"
+  ],
+  "baseline_id": "demo-summary-v1",
+  "configuration_ids": [
+    "demo-summary-v1",
+    "demo-actions-v1",
+    "demo-evidence-v1"
+  ],
+  "repeats": 1,
+  "timeout_seconds": 30,
+  "budget": {
+    "max_concurrency": 1
+  }
+}

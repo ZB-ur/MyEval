@@ -1,0 +1,27 @@
+name: 功能问题
+description: 报告可以复现的运行或界面问题
+body:
+  - type: markdown
+    attributes:
+      value: "请使用虚构材料复现。不要附访问码、原始数据库或私有输出；安全问题请走 SECURITY.md 的私密报告入口。"
+  - type: input
+    id: environment
+    attributes:
+      label: 版本与环境
+      description: MyEval 版本或 commit、操作系统、Python 版本、浏览器
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 从启动命令或演示入口开始；如涉及适配器，说明名称及依赖。
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 期望与实际结果
+      description: 可附经过检查的演示截图、错误码和终态；不要附完整访问链接。
+    validations:
+      required: true

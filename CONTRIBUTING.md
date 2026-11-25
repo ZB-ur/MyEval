@@ -16,4 +16,10 @@
 
 普通问题请附版本、操作步骤、期望和实际结果。截图使用演示数据；删除访问码、个人材料与私有路径后再提交。涉及凭据或私有数据的问题不要把原始内容贴入公开 issue。
 
-本项目的发布与许可状态以仓库设置及根目录许可证文件为准；第三方来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+安全问题使用 [SECURITY.md](SECURITY.md) 中的私密报告入口；一般问题和场景建议使用 [Issues](https://github.com/ZB-ur/MyEval/issues)。目前由维护者按可用时间处理，没有承诺响应时限。
+
+## 提交流程
+
+Fork 仓库后，在独立分支完成改动，通过 Pull Request 提交。较大的能力或契约变更先在 issue 中说明目标场景与验收办法；小修复可直接提交 PR。保持改动范围清楚，同时更新受影响的使用文档。
+
+本项目采用 [MIT 许可](LICENSE)，贡献内容按相同许可提交；第三方来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。请只提交自己有权公开的代码和材料。

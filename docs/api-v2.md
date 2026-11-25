@@ -1,6 +1,6 @@
 # MyEval V2 HTTP 与 CLI
 
-2026-11-18。本文描述当前核心实现；验收状态见 `.local/coordination/20261118/core-progress.md`。服务默认只监听本机，管理员请求使用 `X-MyEval-Admin`。凭据从所选 data-dir/admin.token 在请求边界读取，不放 URL、日志或导出。普通请求 JSON 对象上限 50 MB，历史媒体导入上限 512 MB，失败返回 `{error,code?}`；过期评价 409。
+本文描述当前 V2 核心实现；先用[图文操作手册](walkthrough.md)或[可运行的 CLI 示例](../examples/README.md)了解完整流程，验收边界见[发布记录](acceptance/2026-11-25-release.md)。服务默认只监听本机，管理员请求使用 `X-MyEval-Admin`。凭据从所选 data-dir/admin.token 在请求边界读取，不放 URL、日志或导出。普通请求 JSON 对象上限 50 MB，历史媒体导入上限 512 MB，失败返回 `{error,code?}`；过期评价 409。
 
 首次启动原子创建仅当前用户可读写的管理员令牌。已有 admin.token 必须为可安全读取的普通文件，内容为 32–128 位 ASCII 字母、数字、下划线或连字符（允许文件末尾换行）；空白、损坏或链接文件阻止启动，且不会自动覆盖原文件。校验在数据库初始化和任务恢复之前完成；管理员请求缺少、留空或提供无效 header 均返回 403，即使运行时服务端令牌异常也不会放行。
 

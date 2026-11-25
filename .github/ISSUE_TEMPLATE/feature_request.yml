@@ -1,0 +1,22 @@
+name: 评测场景或改进建议
+description: 说明希望完成的评测与现有阻碍
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 要解决的评测问题
+      description: 评测对象、输入/输出、希望据此作出的决定。
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: 当前如何操作，哪里无法完成
+      description: 可对照 docs/capabilities.md 说明缺口或替代办法。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 怎样判断改进有效
+      description: 期望的实际操作、证据或结果；请用可公开的虚构示例。

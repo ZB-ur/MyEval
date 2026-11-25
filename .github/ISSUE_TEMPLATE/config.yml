@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 操作手册与能力边界
+    url: https://github.com/ZB-ur/MyEval/blob/main/docs/playbooks/README.md
+    about: 先查看可复现演示、真实项目案例和已知限制。
+  - name: 私密漏洞报告
+    url: https://github.com/ZB-ur/MyEval/security/advisories/new
+    about: 不要在公开 issue 中披露访问码或私有数据。

@@ -1,0 +1,109 @@
+{
+  "dataset_id": "office-cli-example",
+  "project": "demo",
+  "name": "CLI 练习 · 虚构办公材料",
+  "version": "1.0.0",
+  "taskpack_id": "demo-office-v1",
+  "configuration_ids": [
+    "demo-summary-v1",
+    "demo-actions-v1",
+    "demo-evidence-v1"
+  ],
+  "notes": "摘自仓库 demo-office-v1 的会议与上线两个原创虚构案例，保留预编写演示回复；不调用模型，不代表真实用户或产品优化证据。导入不会修改原任务包。",
+  "cases": [
+    {
+      "id": "demo-meeting-v1",
+      "family_id": "meeting",
+      "version": "1",
+      "name": "会议安排：确认时间与待定地点",
+      "task": "office_reply",
+      "tags": [
+        "虚构演示",
+        "会议",
+        "待确认"
+      ],
+      "source": {
+        "type": "synthetic",
+        "synthetic": true,
+        "description": "为 MyEval 演示新编的虚构成人办公材料，不对应真人、公司或真实会议。",
+        "as_of": "2026-11-25T00:00:00+08:00"
+      },
+      "input": {
+        "material": "团队例会改到周四 10:00，预计 30 分钟。会议室还没有确认。请各负责人周三下班前把议题发到共享文档。",
+        "request": "给没参加通知会的同事写一条简明消息。"
+      },
+      "expected_behavior": {
+        "guidance": "保留时间、议题提交期限和地点尚未确认的状态。"
+      },
+      "demo_outputs": {
+        "summary": {
+          "reply": "例会改为周四 10:00，预计 30 分钟，会议室待确认。各负责人请在周三下班前把议题补到共享文档。",
+          "quotes": [
+            "会议室还没有确认。"
+          ]
+        },
+        "actions": {
+          "reply": "请先记下两项安排：\n• 周三下班前：负责人把议题写进共享文档。\n• 周四 10:00：参加 30 分钟例会。\n会议室尚未确认，地点需要另行核实。",
+          "quotes": [
+            "请各负责人周三下班前把议题发到共享文档。"
+          ]
+        },
+        "evidence": {
+          "reply": "已确定：周四 10:00 开例会，预计 30 分钟；负责人周三下班前提交议题。\n待确认：会议室。通知原文没有给出地点，请勿按上次会议室安排。",
+          "quotes": [
+            "团队例会改到周四 10:00，预计 30 分钟。",
+            "会议室还没有确认。"
+          ]
+        }
+      },
+      "split": "development"
+    },
+    {
+      "id": "demo-release-v1",
+      "family_id": "release",
+      "version": "1",
+      "name": "上线计划：目标日期并非承诺",
+      "task": "office_reply",
+      "tags": [
+        "虚构演示",
+        "计划",
+        "条件"
+      ],
+      "source": {
+        "type": "synthetic",
+        "synthetic": true,
+        "description": "为 MyEval 演示新编的虚构项目安排，不对应真实项目。",
+        "as_of": "2026-11-25T00:00:00+08:00"
+      },
+      "input": {
+        "material": "检索功能计划在下周二试运行，前提是周一完成权限检查。权限检查由林工负责，目前还未结束。试运行只向内部同事开放。",
+        "request": "整理目前进度，避免让人误以为已经确定对外上线。"
+      },
+      "expected_behavior": {
+        "guidance": "区分条件性试运行目标与已确认上线；保留内部范围。"
+      },
+      "demo_outputs": {
+        "summary": {
+          "reply": "检索功能暂定下周二内部试运行，仍取决于周一能否完成权限检查。林工负责检查，目前尚未结束；这不是对外上线安排。",
+          "quotes": [
+            "试运行只向内部同事开放。"
+          ]
+        },
+        "actions": {
+          "reply": "• 林工：继续权限检查，目标是在周一完成。\n• 团队：根据检查结果确认下周二能否试运行。\n• 使用范围：内部同事。\n当前没有已确定的对外上线日期。",
+          "quotes": [
+            "前提是周一完成权限检查。"
+          ]
+        },
+        "evidence": {
+          "reply": "已知目标是“下周二试运行”，不是无条件的上线承诺。权限检查仍未结束，周一完成检查是前提；即使按计划开展，也只向内部同事开放。",
+          "quotes": [
+            "权限检查由林工负责，目前还未结束。",
+            "试运行只向内部同事开放。"
+          ]
+        }
+      },
+      "split": "development"
+    }
+  ]
+}
