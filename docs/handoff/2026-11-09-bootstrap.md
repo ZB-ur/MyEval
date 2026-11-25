@@ -1,6 +1,6 @@
 # MyEval 首版搭建交接
 
-日期：2026-11-09。工作目录：`/Users/lddmay/MyEval`。
+日期：2026-11-09。工作目录：`/path/to/MyEval`。
 
 用户在“思间 · 主脑”（`01a1a951-fa22-7dc0-8ace-11a177c87a99`）的直接指令：
 
@@ -43,7 +43,7 @@
 
 ### 思间 Sijian
 
-路径 `/Users/lddmay/AiCoding/Sijian`，当时工作树干净，HEAD `06ab87c`。先读其 AGENTS.md、README.md、docs/status.md、docs/product.md、docs/decisions.md、docs/evaluation.md。
+路径 `~/AiCoding/Sijian`，当时工作树干净，HEAD `06ab87c`。先读其 AGENTS.md、README.md、docs/status.md、docs/product.md、docs/decisions.md、docs/evaluation.md。
 
 - 真实入口 `services/agent/server.py` 的 `/discover`、`/review`，开发期 Codex CLI 桥接，默认请求 `gpt-6-sol` / `low`，不是上线架构。模型/effort 可由启动参数指定。
 - `X-Sijian-Run-Mode: evaluation` 使用独立轨迹；已有请求、提示词/边界/schema 快照与哈希、可观察事件、时延和用量。实际模型/effort 可能 unknown。
@@ -54,7 +54,7 @@
 
 ### pomegranagent-v2
 
-路径 `/Users/lddmay/AiCoding/pomegranagent-v2`。当时存在用户未跟踪文件 `docs/development-retrospective.md`，保护它。先读其 AGENTS.md、README.md、docs/product.md。
+路径 `~/AiCoding/pomegranagent-v2`。当时存在用户未跟踪文件 `docs/development-retrospective.md`，保护它。先读其 AGENTS.md、README.md、docs/product.md。
 
 - `server.py` 调用 `backend/app.py`，可用独立 `--data-dir` 和端口启动，默认产品端口 8768。实际参数以代码为准。
 - `/api/chat` 是候选生成 → 审校 → 最终交付的真实多阶段路径；通常 2 次模型请求，最多 3 次含共享一次重试，75 秒共享预算。审校器属于被评测系统，不是独立评分器。

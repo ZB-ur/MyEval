@@ -18,14 +18,17 @@ from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, ProxyHandler
 
-ADAPTER_VERSION = 'pome-http-3'
-DEFAULT_ROOT = Path('/Users/lddmay/AiCoding/pomegranagent-v2')
+ADAPTER_VERSION = 'pome-http-9'
+DEFAULT_ROOT = Path.home() / 'AiCoding' / 'pomegranagent-v2'
+_PROFILE_CACHE = {}
+_PROFILE_CACHE_LOCK = threading.Lock()
 LIMITATIONS = [
     '仅虚构文字 HTTP 旅程；没有执行儿童端浏览器自动保存、语音倒计时、ASR、TTS 或真人儿童质量验收。',
-    '候选后的审校器属于被评测系统，不能作为独立模型评分。',
+    '理解卡、检查或审校阶段都属于被评测系统，不能作为独立模型评分；具体阶段以配置快照为准。',
     '取消会停止本地等待和后续步骤；供应商没有接入取消协议，已送达的远端计算和计费是否停止未知。',
     '供应商返回的 model 单独记录；thinking 与 reasoning_effort 没有响应回显，生效值保持 unknown。',
     '费用未绑定计价版本，保持 null；缺失用量保持未知，不用 0 代替。',
+    'interaction_policy 为显式模拟用户；规则分支不等于模型用户或真实儿童反馈，模拟器与产品用量分别记录。',
 ]
 
 
@@ -55,7 +58,12 @@ def _requested(configuration):
     requested = {'model': parameters.get('model', 'deepseek-flash'),
                  'chat_max_tokens': 4096, 'summary_max_tokens': 2048}
     profile = parameters.get('dialogue_profile', 'baseline')
-    if profile not in ('baseline', 'grounded-v1', 'contextual-v1'):
+    if profile not in ('baseline', 'grounded-v1', 'contextual-v1',
+                       'dialogue-act-v2', 'evidence-ledger-v2', 'selective-memory-v2',
+                       'direct-companion-v3', 'perspective-then-speak-v3', 'selective-repair-v3',
+                       'warm-direct-v4', 'responsive-friend-v4', 'case-based-friend-v4',
+                       'warm-participant-v5', 'reference-companion-v5',
+                       'need-aware-companion-v6', 'compact-reference-v6'):
         raise ValueError('unsupported_dialogue_profile')
     requested['dialogue_profile'] = profile
     for operation, default in [('chat', 'enabled'), ('summary', 'disabled')]:
@@ -70,9 +78,51 @@ def _requested(configuration):
     return requested
 
 
+def _profile_metadata(root, profile_id, source_hashes):
+    """Describe the exact source version without importing it into the UI server.
+
+    A long-lived catalog process must not mix current file hashes with Python's
+    previously imported product modules. Import in a lightweight child process;
+    cache only results with the same root and source fingerprint. Importing the
+    product module does not construct Store/LocalVoice or load a speech model.
+    """
+    key = _sha({'root': str(root), 'profile': profile_id, 'files': source_hashes})
+    with _PROFILE_CACHE_LOCK:
+        if key in _PROFILE_CACHE:
+            return copy.deepcopy(_PROFILE_CACHE[key])
+        program = (
+            'import json,sys\n'
+            'from pathlib import Path\n'
+            'from backend import app\n'
+            'if Path(app.__file__).resolve() != (Path.cwd()/"backend/app.py").resolve():\n'
+            '    raise RuntimeError("product_source_mismatch")\n'
+            'print(json.dumps(app.resolve_dialogue_profile(sys.argv[1])["metadata"], ensure_ascii=False))\n'
+        )
+        process = subprocess.run([sys.executable, '-B', '-c', program, profile_id],
+                                 cwd=root, capture_output=True, text=True, timeout=20)
+        if process.returncode:
+            raise RuntimeError('product_profile_description_failed')
+        try:
+            metadata = json.loads(process.stdout)
+        except (TypeError, ValueError):
+            raise RuntimeError('product_profile_description_failed') from None
+        after = {name: _sha((root / name).read_bytes()) if (root / name).is_file() else None
+                 for name in source_hashes}
+        if after != source_hashes:
+            raise RuntimeError('product_source_changed_during_describe')
+        if not isinstance(metadata, dict) or metadata.get('id') != profile_id:
+            raise RuntimeError('product_profile_description_failed')
+        if len(_PROFILE_CACHE) >= 64:
+            _PROFILE_CACHE.clear()
+        _PROFILE_CACHE[key] = copy.deepcopy(metadata)
+        return metadata
+
+
 def describe(configuration):
     root = _root()
-    files = ['server.py', 'backend/app.py', 'backend/evaluation.py', 'backend/local_voice.py', 'backend/agent_profiles.py']
+    files = ['server.py', 'backend/app.py', 'backend/evaluation.py', 'backend/local_voice.py',
+             'backend/agent_profiles.py', 'backend/dialogue_evidence.py', 'backend/dialogue_v3.py',
+             'backend/friend_profiles.py', 'backend/friend_profiles_v5.py', 'backend/eval_profiles_v6.py']
     hashes = {name: _sha((root / name).read_bytes()) if (root / name).is_file() else None for name in files}
     prompts = {}
     if (root / 'backend/app.py').is_file():
@@ -84,14 +134,7 @@ def describe(configuration):
     requested = _requested(configuration)
     profile_metadata = None
     if (root / 'backend/agent_profiles.py').is_file():
-        sys.path.insert(0, str(root))
-        try:
-            app = importlib.import_module('backend.app')
-        finally:
-            sys.path.remove(str(root))
-        if Path(app.__file__).resolve() != (root / 'backend/app.py').resolve():
-            raise RuntimeError('product_source_mismatch')
-        profile_metadata = app.describe_dialogue_profiles()[requested['dialogue_profile']]
+        profile_metadata = _profile_metadata(root, requested['dialogue_profile'], hashes)
     elif requested['dialogue_profile'] != 'baseline':
         raise RuntimeError('product_dialogue_profile_seam_missing')
     return {
@@ -102,15 +145,28 @@ def describe(configuration):
         'source_files_sha256': hashes, 'prompt_sha256': prompts,
         'dialogue_profile': profile_metadata,
         'adapter_sha256': _sha(Path(__file__).read_bytes()),
+        'adapter_dependencies_sha256': {
+            name: _sha((Path(__file__).resolve().parents[1] / name).read_bytes())
+            for name in ('interactions/__init__.py', 'interactions/driver.py',
+                         'interactions/providers.py', 'interactions/workspace.py')
+            if (Path(__file__).resolve().parents[1] / name).is_file()
+        },
         'entrypoints': ['/api/state', '/api/chat', '/api/summary'],
         'requested': requested,
         'effective': {'model': None, 'chat_reasoning_effort': None, 'summary_reasoning_effort': None,
                       'chat_thinking': None, 'summary_thinking': None},
         'capabilities': {'multi_turn': 'supported', 'audio': 'unsupported',
+                         'scripted_user': 'supported', 'rule_based_user': 'supported',
+                         'model_simulated_user': 'supported',
                          'cancel_local_wait': 'supported', 'cancel_provider': 'unsupported',
                          'environment_reset': 'supported', 'state_snapshot': 'supported',
                          'isolated_full_run': 'supported', 'fixed_context_rerun': 'unsupported',
                          'trace_rescore': 'unsupported'},
+        'interaction_provider': {'id': 'codex_cli', 'requested_model': 'gpt-6-sol',
+                                 'requested_reasoning_effort': 'low', 'tools': [],
+                                 'effective_model': None, 'effective_reasoning_effort': None,
+                                 'usage_scope': 'separate_from_product_model_usage',
+                                 'activation': 'only_explicit_case_input_interaction_policy_mode_model'},
         'mode': configuration.get('mode'), 'limitations': LIMITATIONS,
     }
 
@@ -123,6 +179,11 @@ class RunStopped(Exception):
 class RequestFailed(Exception):
     def __init__(self, status, body, endpoint):
         self.status, self.body, self.endpoint = status, body, endpoint
+
+
+class InteractionStopped(Exception):
+    def __init__(self, reason):
+        self.reason = reason
 
 
 def _credential_source(root):
@@ -167,6 +228,26 @@ def _write(root, name, value):
     path.chmod(0o600)
 
 
+def _artifacts(root, interaction):
+    # Explicit evidence allowlist. Never walk a product data directory or export
+    # arbitrary simulator workspace content/credentials.
+    names = ('pome.events.jsonl', 'pome.state-initial.json', 'pome.state-current.json',
+             'pome.state-final.json', 'pome.state-last.json', 'pome.result.json')
+    result = {name: name for name in names if (root / name).is_file() or name == 'pome.result.json'}
+    evidence_names = ('request.json', 'prompt.txt', 'boundary.txt', 'schema.json', 'events.jsonl',
+                      'result.json', 'receipt.json', 'invocation.json', 'process.json')
+    for receipt in (interaction or {}).get('provider_receipts', []):
+        run_id = receipt.get('run_id')
+        if not isinstance(run_id, str) or len(run_id) != 32 or any(c not in '0123456789abcdef' for c in run_id):
+            continue
+        for name in evidence_names:
+            relative = Path('user-simulator') / run_id / 'live' / name
+            path = root / relative
+            if path.is_file() and not path.is_symlink():
+                result[f'simulator.{run_id}.{name}'] = relative.as_posix()
+    return result
+
+
 def _rule(name, passed, detail):
     return {'kind': 'rule', 'evaluator': 'pome-boundary-rules', 'version': '1',
             'dimension': name, 'status': 'pass' if passed else 'fail',
@@ -190,6 +271,8 @@ def run(case, configuration, ctx):
     status = 'failed'
     error = None
     assessments = []
+    interaction = None
+    terminal_assistant_delivery = None
     started = time.monotonic()
     deadline = started + float(getattr(ctx, 'timeout_seconds', 300))
     episode = 'myeval-' + str(ctx.trial_id)
@@ -224,6 +307,7 @@ def run(case, configuration, ctx):
                           method=method, headers={'Content-Type': 'application/json', 'X-Request-ID': request_id})
         finished = threading.Event()
         reply = {}
+        request_started = time.monotonic()
 
         def send():
             try:
@@ -246,7 +330,8 @@ def run(case, configuration, ctx):
         while not finished.wait(0.1):
             guard()
         guard()
-        ctx.emit('http_response', {'endpoint': endpoint, 'request_id': request_id, 'status': reply['status']},
+        ctx.emit('http_response', {'endpoint': endpoint, 'request_id': request_id, 'status': reply['status'],
+                                   'duration_ms': round((time.monotonic() - request_started) * 1000, 3)},
                  episode=episode, turn=turn)
         if reply['status'] != 200:
             raise RequestFailed(reply['status'], reply['body'], endpoint)
@@ -269,6 +354,24 @@ def run(case, configuration, ctx):
         credentials = _read_credentials(source)
         credentials['chatModel'] = requested['model']
         fixture = copy.deepcopy(case['input'])
+        interaction_policy = fixture.get('interaction_policy')
+        if interaction_policy is not None:
+            from ..interactions import TurnDriver, validate_policy
+            try:
+                interaction_policy = validate_policy(interaction_policy)
+            except ValueError:
+                raise RuntimeError('invalid_interaction_policy') from None
+            if fixture.get('child_turns'):
+                raise RuntimeError('ambiguous_interaction_input')
+            if interaction_policy['max_turns'] > fixture.get('conversation_rounds', 3):
+                raise RuntimeError('interaction_exceeds_product_rounds')
+            provider = None
+            if interaction_policy['mode'] == 'model':
+                from ..interactions import CodexSimulatorProvider
+                provider = CodexSimulatorProvider(root / 'user-simulator', model='gpt-6-sol', effort='low')
+            interaction = TurnDriver(interaction_policy, ctx, episode, provider=provider)
+        elif not isinstance(fixture.get('child_turns'), list) or not fixture['child_turns']:
+            raise RuntimeError('missing_child_turns')
         children = copy.deepcopy(case['initial_state']['children'])
         child = next(c for c in children if c['id'] == fixture['child_id'])
         guard()
@@ -286,7 +389,7 @@ def run(case, configuration, ctx):
         server.store = app.Store(root / 'pome-data', runtime_settings=credentials)
         server.web_root = product_root / 'web'
         # Text execution deliberately leaves audio uninitialised. It does not
-        # stub chat/summary, inspect recordings, or resume the paused audio work.
+        # stub chat/summary, inspect recordings, or change the current voice.
         server.local_voice = app.LocalVoice(product_root / 'models')
         server.ai_options = {key: value for key, value in requested.items()
                              if key in ('chat_thinking', 'chat_reasoning_effort', 'summary_thinking', 'summary_reasoning_effort', 'dialogue_profile') and value is not None}
@@ -315,10 +418,33 @@ def run(case, configuration, ctx):
             assessments.append(_rule('background_scope', actual == expected_background,
                                      '比较服务器草稿背景快照与用例标注的允许原文；仅验证选材边界。'))
         ctx.emit('state_snapshot', {'name': 'initial', 'sha256': _sha(state), 'background': background}, episode=episode)
-        for index, script in enumerate(fixture['child_turns'], 1):
+        index = 0
+        previous_delivery = None
+        while True:
             guard()
-            utterance = script if isinstance(script, str) else script['text']
-            finish_requested = isinstance(script, dict) and script.get('finish_requested', False)
+            if interaction is not None:
+                generated = interaction.next_user(previous_delivery)
+                previous_delivery = None
+                if generated['text'] is None:
+                    reason = generated['stop_reason']
+                    if reason == 'cancelled':
+                        raise RunStopped('cancelled')
+                    if reason == 'deadline':
+                        raise RunStopped('timed_out')
+                    if reason not in ('max_turns', 'script_exhausted', 'simulator_completed',
+                                      'simulator_stopped', 'assistant_stop_rule') and not reason.startswith('rule:'):
+                        raise InteractionStopped(reason)
+                    if not turns_result:
+                        raise InteractionStopped('no_user_turns')
+                    break
+                utterance, finish_requested = generated['text'], False
+            else:
+                if index >= len(fixture['child_turns']):
+                    break
+                script = fixture['child_turns'][index]
+                utterance = script if isinstance(script, str) else script['text']
+                finish_requested = isinstance(script, dict) and script.get('finish_requested', False)
+            index += 1
             transcript.append({'role': 'child', 'text': utterance})
             state['drafts'][draft_key]['turns'] = copy.deepcopy(transcript)
             state['drafts'][draft_key]['finishRequested'] = finish_requested
@@ -329,7 +455,7 @@ def run(case, configuration, ctx):
                 'themeId': draft['themeId'], 'conversationRounds': draft['conversationRounds'],
                 'finishRequested': finish_requested, 'turns': copy.deepcopy(transcript),
             }, turn=index)
-            # Only the actual delivered, reviewed response enters the next turn.
+            # Only the actual delivered response enters the next turn.
             transcript.append({'role': 'assistant', 'text': result['text']})
             turns_result.append({'turn': index, **result})
             state['drafts'][draft_key]['turns'] = copy.deepcopy(transcript)
@@ -340,12 +466,23 @@ def run(case, configuration, ctx):
                                         'delivered': result, 'persisted_turn_count': len(transcript)},
                      episode=episode, turn=index)
             if result.get('endConversation'):
+                if interaction is not None:
+                    # Closing a product episode must not ask a simulator to
+                    # generate one extra (undelivered) child turn. Preserve the
+                    # final delivery explicitly beside the driver's own view.
+                    terminal_assistant_delivery = result['text']
+                    ctx.emit('interaction.product_terminal_delivery',
+                             {**interaction.identity, 'text': result['text'],
+                              'reason': 'product_end_conversation'}, episode=episode, turn=index)
+                    interaction.finish('product_end_conversation')
                 break
+            previous_delivery = result['text'] if interaction is not None else None
         summary_reply = http('POST', '/api/summary', {'storyId': episode, 'childId': child['id'],
                                                    'turns': copy.deepcopy(transcript)})
         summary = summary_reply['text']
         output['summary'] = summary
-        output['scripted_turns_not_executed'] = len(fixture['child_turns']) - len(turns_result)
+        output['scripted_turns_not_executed'] = (len(fixture['child_turns']) - len(turns_result)
+                                               if interaction is None else None)
         record = {k: copy.deepcopy(state['drafts'][draft_key][k])
                   for k in ('id', 'child', 'activityDate', 'createdAt', 'themeId', 'turns')}
         record.update(text=summary, duckId=None)
@@ -366,10 +503,11 @@ def run(case, configuration, ctx):
             stage_results = [e for e in events if e['kind'] == 'stage_result']
         assessments.append(_rule('actual_reply_context', chain_valid and len(observed_inputs) == len(turns_result),
                                  '每轮产品收到的上下文与该 trial 实际交付的历史逐项比较；候选不作为历史。'))
-        assessments.append(_rule('candidate_review_observed',
+        required_stages = (provenance.get('dialogue_profile') or {}).get('required_chat_stages', ['candidate', 'review'])
+        assessments.append(_rule('configured_stages_observed',
                                  all(any(e['turn'] == t['turn'] and e['stage'] == s for e in stage_results)
-                                     for t in turns_result for s in ('candidate', 'review')),
-                                 '每个已交付轮次都有候选与审校通过记录；不代表内容质量通过。'))
+                                     for t in turns_result for s in required_stages),
+                                 '每个已交付轮次都有配置声明的阶段记录：' + ', '.join(required_stages) + '；不代表内容质量通过。'))
         forbidden = case.get('summary_forbidden_fragments', [])
         if forbidden:
             found = [fragment for fragment in forbidden if fragment in summary]
@@ -388,17 +526,31 @@ def run(case, configuration, ctx):
         status = 'refused' if refused else 'failed'
         error = {'code': 'product_http_error', 'http_status': exc.status, 'endpoint': exc.endpoint,
                  'details': exc.body}
+    except InteractionStopped as exc:
+        status = 'failed'
+        error = {'code': 'interaction_stopped', 'reason': exc.reason,
+                 'message': '模拟用户未正常完成；保留已交付内容，不当作完整对话成功。'}
     except Exception as exc:
         known = {'missing_credentials': '缺少已授权的 pome 本机服务配置。可用 MYEVAL_POME_CREDENTIAL_DB 指定含设置的本机数据库。',
                  'unsupported_provider': '该适配器首版仅接入已授权的 DeepSeek 官方服务。',
                  'unsupported_configuration': '支持 DeepSeek Flash 的显式思考开/关；开启需 low/high/max，关闭不携带思考强度。',
                  'unsupported_task': '不支持此任务类型。',
+                 'ambiguous_interaction_input': 'interaction_policy 与未来 child_turns 不能同时提供。',
+                 'invalid_interaction_policy': 'interaction_policy 不符合有界用户模拟契约；请核对模式、可见事实、分支与限制。',
+                 'interaction_exceeds_product_rounds': '模拟用户最大轮数不能超过本次产品对话轮数。',
+                 'missing_child_turns': '固定脚本执行需提供非空 child_turns。',
                  'synthetic_material_required': '首版执行仅允许明确标注的虚构材料。',
                  'product_observation_seam_missing': '产品源码缺少本次共享观测接口。'}
         code = str(exc) if str(exc) in known else 'adapter_error'
         status = 'unsupported' if code.startswith('unsupported') else 'failed'
         error = {'code': code, 'message': known.get(code, '适配器执行未完成。'), 'exception_type': type(exc).__name__}
     finally:
+        if interaction is not None:
+            interaction.finish('product_' + status)
+            output['interaction'] = {**interaction.snapshot(),
+                                     'terminal_assistant_delivery': terminal_assistant_delivery,
+                                     'terminal_delivery_scope': 'observed_by_product_adapter_not_used_to_generate_another_user_turn',
+                                     'human_feedback': False}
         sink_closed.set()
         if server is not None:
             if server_thread is not None and server_thread.is_alive():
@@ -438,9 +590,18 @@ def run(case, configuration, ctx):
                 'effective_reasoning_effort': None, 'effective_thinking': None,
                 'evidence': '供应商 model 响应字段；思考强度没有回显',
                 'provenance': provenance}
+    # The blinded reader needs the facts each side could actually see, without
+    # profile names, internal plans, prompts, timings, or configuration hints.
+    context_by_turn = [{'turn': e['turn'], 'background': {
+        'childName': (e['data'].get('background') or {}).get('childName'),
+        'recentStories': (e['data'].get('background') or {}).get('recentStories', []),
+        'animals': (e['data'].get('background') or {}).get('animals', []),
+    }} for e in events if e['kind'] == 'input' and e.get('operation') == 'chat']
     result = {'status': status, 'output': output,
-              'review_output': {'transcript': copy.deepcopy(transcript), 'summary': summary},
+              'review_output': {'transcript': copy.deepcopy(transcript), 'summary': summary,
+                                'context_by_turn': context_by_turn},
               'observed_configuration': observed, 'usage': usage, 'cost': None,
-              'assessments': assessments, 'limitations': LIMITATIONS, 'error': error}
+              'assessments': assessments, 'limitations': LIMITATIONS, 'error': error,
+              'artifacts': _artifacts(root, output.get('interaction'))}
     _write(root, 'pome.result.json', result)
     return result

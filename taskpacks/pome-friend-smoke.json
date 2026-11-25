@@ -1,0 +1,245 @@
+{
+  "id": "pome-friend-smoke",
+  "project": "pome",
+  "name": "pome 朋友回应 · 独立预检",
+  "version": "1.0.0",
+  "description": "仅用于真实业务路径预检；无正式质量结论。",
+  "rubric": [],
+  "cases": [
+    {
+      "id": "pome-rebuild-smoke-care",
+      "version": "1",
+      "family_id": "smoke-care",
+      "split": "smoke",
+      "name": "独立预检 · care",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-rebuild-smoke-care",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "budgerigar",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我看见朵朵的水杯歪了，我扶正以后请老师来看看。",
+          "不是我倒的水，是老师倒的。我怕水漏出来。",
+          "我还看见杯子边上有一个小点点。我讲完啦。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-rebuild-smoke-care",
+            "name": "虚构小禾",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-rebuild-smoke-bird-care",
+            "name": "朵朵",
+            "active": true,
+            "animalType": "budgerigar",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-smoke-history-care-0",
+            "child": {
+              "id": "synthetic-rebuild-smoke-care",
+              "name": "虚构小禾",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-02",
+            "createdAt": "2026-11-02T00:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我看见朵朵的水杯漏了一点水，老师说要先检查有没有歪。"
+              }
+            ],
+            "text": "我看见朵朵的水杯漏了一点水，老师说要先检查有没有歪。",
+            "duckId": "synthetic-rebuild-smoke-bird-care",
+            "reviewedAt": "2026-11-02T01:00:00Z"
+          },
+          {
+            "id": "synthetic-smoke-history-care-1",
+            "child": {
+              "id": "synthetic-rebuild-smoke-care",
+              "name": "虚构小禾",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-03",
+            "createdAt": "2026-11-03T00:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我在窗边看朵朵梳理羽毛。"
+              }
+            ],
+            "text": "我在窗边看朵朵梳理羽毛。",
+            "duckId": "synthetic-rebuild-smoke-bird-care",
+            "reviewedAt": "2026-11-03T01:00:00Z"
+          },
+          {
+            "id": "synthetic-smoke-history-care-2",
+            "child": {
+              "id": "synthetic-rebuild-smoke-care",
+              "name": "虚构小禾",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-04",
+            "createdAt": "2026-11-04T00:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我和老师把朵朵笼子旁边的纸盒拿开。"
+              }
+            ],
+            "text": "我和老师把朵朵笼子旁边的纸盒拿开。",
+            "duckId": "synthetic-rebuild-smoke-bird-care",
+            "reviewedAt": "2026-11-04T01:00:00Z"
+          },
+          {
+            "id": "synthetic-smoke-history-care-3",
+            "child": {
+              "id": "synthetic-rebuild-smoke-care",
+              "name": "虚构小禾",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-05",
+            "createdAt": "2026-11-05T00:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我数了三片落叶。"
+              }
+            ],
+            "text": "我数了三片落叶。",
+            "duckId": "synthetic-rebuild-smoke-bird-care",
+            "reviewedAt": "2026-11-05T01:00:00Z"
+          }
+        ]
+      },
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "仅本轮接口和流程预检的虚构资料，不计入正式质量统计。"
+      },
+      "expected_behavior": [
+        "真实完成3轮接话和独立整理，保留纠正、明确结束及来源区分。"
+      ]
+    },
+    {
+      "id": "pome-rebuild-smoke-knowledge",
+      "version": "1",
+      "family_id": "smoke-knowledge",
+      "split": "smoke",
+      "name": "独立预检 · knowledge",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-rebuild-smoke-knowledge",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "budgerigar",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "为什么小鸟身上有羽毛呀？",
+          "我说的是朵朵，它是一只虎皮鹦鹉。",
+          "我只是问问，没有摸它的羽毛。今天讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-rebuild-smoke-knowledge",
+            "name": "虚构小禾",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-rebuild-smoke-bird-knowledge",
+            "name": "朵朵",
+            "active": true,
+            "animalType": "budgerigar",
+            "color": "cream"
+          }
+        ],
+        "records": []
+      },
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "仅本轮接口和流程预检的虚构资料，不计入正式质量统计。"
+      },
+      "expected_behavior": [
+        "真实完成3轮接话和独立整理，保留纠正、明确结束及来源区分。"
+      ]
+    }
+  ],
+  "configurations": [
+    {
+      "id": "pome-friend-original-a",
+      "name": "原 A · 直接自然接话",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "dialogue_profile": "direct-companion-v3",
+        "chat_thinking": "enabled",
+        "chat_reasoning_effort": "low",
+        "summary_thinking": "disabled"
+      }
+    },
+    {
+      "id": "pome-friend-improved-a",
+      "name": "A 改善 · 温暖直接回应",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "dialogue_profile": "warm-direct-v4",
+        "chat_thinking": "enabled",
+        "chat_reasoning_effort": "low",
+        "summary_thinking": "disabled"
+      }
+    },
+    {
+      "id": "pome-friend-responsive-b",
+      "name": "新方案 B · 情绪回应与共同关注",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "dialogue_profile": "responsive-friend-v4",
+        "chat_thinking": "enabled",
+        "chat_reasoning_effort": "low",
+        "summary_thinking": "disabled"
+      }
+    },
+    {
+      "id": "pome-friend-case-based-c",
+      "name": "新方案 C · 情境示范检索",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "dialogue_profile": "case-based-friend-v4",
+        "chat_thinking": "enabled",
+        "chat_reasoning_effort": "low",
+        "summary_thinking": "disabled"
+      }
+    }
+  ]
+}

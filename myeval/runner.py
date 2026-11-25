@@ -16,11 +16,17 @@ from .util import ROOT, TERMINAL, now, read_events, safe_error, write_json
 class Runner:
     def __init__(self, store, concurrency=2):
         self.store = store
-        self.concurrency = concurrency
+        if type(concurrency) is not int or not 1 <= concurrency <= 32:
+            raise ValueError("本机并发必须为 1–32")
+        self.store.configure_queue({"concurrency": concurrency})
         self.stopping = threading.Event()
         self.active = {}
         self.lock = threading.Lock()
         self.threads = []
+
+    @property
+    def concurrency(self):
+        return self.store.queue_settings()["concurrency"]
 
     def recover(self):
         # Only touch our own recorded workers, and confirm their command before using a PID.
@@ -50,8 +56,10 @@ class Runner:
         return self.store.recover()
 
     def start(self):
-        for index in range(self.concurrency):
-            thread = threading.Thread(target=self.loop, name=f"myeval-runner-{index}", daemon=True)
+        # Fixed bounded dispatcher pool; the persisted setting gates claim().
+        # Changing concurrency never kills in-flight product work.
+        for index in range(32):
+            thread = threading.Thread(target=self.loop, args=(index,), name=f"myeval-runner-{index}", daemon=True)
             self.threads.append(thread)
             thread.start()
 
@@ -69,8 +77,11 @@ class Runner:
         for process in remaining:
             self._signal(process.pid, signal.SIGKILL)
 
-    def loop(self):
+    def loop(self, index=0):
         while not self.stopping.is_set():
+            if index >= self.concurrency:
+                self.stopping.wait(0.5)
+                continue
             trial = self.store.claim()
             if trial:
                 try:
@@ -81,7 +92,9 @@ class Runner:
                 # Stopped-before-dispatch and recovered terminal trials also belong
                 # in the observability denominator. One bounded delivery attempt;
                 # failed/unconfigured receipts require explicit operator resync.
-                unpublished = next((t for t in self.store.trials() if t["status"] in TERMINAL and t.get("platform") is None), None)
+                with self.store.lock:
+                    row = self.store.db.execute("SELECT body FROM trials WHERE status NOT IN ('queued','running','cancelling') AND json_extract(body,'$.platform') IS NULL ORDER BY rowid LIMIT 1").fetchone()
+                unpublished = json.loads(row[0]) if row else None
                 if unpublished:
                     self.publish(unpublished["id"], unpublished["attempt"])
                 else:

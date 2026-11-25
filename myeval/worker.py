@@ -6,6 +6,7 @@ import traceback
 from pathlib import Path
 
 from .catalog import adapter
+from .datasets import validate_source
 from .context import CancelledError, RunContext
 from .util import TERMINAL, digest, now, safe_error, write_json
 
@@ -15,6 +16,11 @@ def main():
     ctx = RunContext(Path(sys.argv[1]).parent, request["id"], request["experiment_id"], request["timeout_seconds"])
     ctx.emit("worker.started", {"project": request["project"], "execution_attempt": request["attempt"]})
     try:
+        # Long-lived queues may outlast a scoped grant. Recheck before touching
+        # the product boundary; old synthetic cases remain backward compatible.
+        checked_source = validate_source(request["case"], request.get("authorization"), request["project"])
+        ctx.emit("source.authorization_verified", {"source_type": checked_source["type"],
+                                                   "authorization_hash": checked_source.get("authorization_hash")})
         implementation = adapter(request["project"])
         observed = implementation.describe(request["configuration"])
         expected = request["configuration"].get("provenance")

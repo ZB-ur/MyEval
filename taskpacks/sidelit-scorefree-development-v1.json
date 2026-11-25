@@ -1,0 +1,632 @@
+{
+  "id": "sidelit-scorefree-development-v1",
+  "project": "sidelit",
+  "name": "Sidelit · 无分数契约开发",
+  "version": "1.0.0",
+  "description": "12条新编虚构用户请求配3张已见许可公开照片；仅3个独立图像家族。V2新契约能力与内容质量分开比较，作者基线保持原契约并忽略意图。",
+  "rubric": [
+    {
+      "id": "contract",
+      "name": "请求与无分数契约",
+      "description": "按显式purpose响应；observe无建议，无未请求评分、排名或伪概率。合法schema和文本语义分别判断。"
+    },
+    {
+      "id": "visual_facts",
+      "name": "视觉事实",
+      "description": "实际可见对象、关系、表情线索准确；不能把用户意图或前阶段观察当事实。"
+    },
+    {
+      "id": "uncertainty",
+      "name": "现象与原因边界",
+      "description": "不编造设备、拍摄参数、技术原因、心理或身份；未知有具体边界。"
+    },
+    {
+      "id": "intent_fit",
+      "name": "用户约束",
+      "description": "保留用户明示主体、环境和动作范围；条件建议不违背保留/避免项。"
+    },
+    {
+      "id": "useful_coverage",
+      "name": "有效覆盖",
+      "description": "回答实际问题，具体而有信息量；不足和拒绝保留覆盖损失，不靠回避获得高分。"
+    },
+    {
+      "id": "actionability",
+      "name": "条件建议",
+      "description": "advice中的动作具体、有条件且基于可见观察；允许无必要时不调整。observe合法无建议记不适用。"
+    }
+  ],
+  "rubric_ref": "rubrics/sidelit-scorefree-v1.json",
+  "cases": [
+    {
+      "id": "contract-dev-c01",
+      "name": "coffee · c01 · observe",
+      "version": "1.0.0",
+      "family_id": "skimage-coffee",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-coffee",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coffee.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Rachel Michetti",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.coffee",
+        "media_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/coffee.png",
+        "image_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "intent": "我只想知道杯子、勺子和桌面之间有哪些看得见的位置关系。不要评价好不好，也不要打分。",
+        "product_request": {
+          "purpose": "observe",
+          "intent": {
+            "text": "我只想知道杯子、勺子和桌面之间有哪些看得见的位置关系。不要评价好不好，也不要打分。",
+            "preserve": [],
+            "avoid": [
+              "不要评价好不好",
+              "不要打分"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-c02",
+      "name": "coffee · c02 · advice",
+      "version": "1.0.0",
+      "family_id": "skimage-coffee",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-coffee",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coffee.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Rachel Michetti",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.coffee",
+        "media_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/coffee.png",
+        "image_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "intent": "我准备把这张当作桌边生活记录，桌面的纹理要保留。只给一条可选的后期调整，不建议重新摆放或重拍，不用总评。",
+        "product_request": {
+          "purpose": "advice",
+          "intent": {
+            "text": "我准备把这张当作桌边生活记录，桌面的纹理要保留。只给一条可选的后期调整，不建议重新摆放或重拍，不用总评。",
+            "preserve": [
+              "桌面的纹理要保留"
+            ],
+            "avoid": [
+              "不建议重新摆放或重拍",
+              "不用总评"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-c03",
+      "name": "coffee · c03 · observe",
+      "version": "1.0.0",
+      "family_id": "skimage-coffee",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-coffee",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coffee.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Rachel Michetti",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.coffee",
+        "media_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/coffee.png",
+        "image_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "intent": "这张图能确定用了哪一种灯和多长快门吗？能看见的现象和不能确定的原因分开说，不要评分。",
+        "product_request": {
+          "purpose": "observe",
+          "intent": {
+            "text": "这张图能确定用了哪一种灯和多长快门吗？能看见的现象和不能确定的原因分开说，不要评分。",
+            "preserve": [],
+            "avoid": [
+              "不要评分"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-c04",
+      "name": "coffee · c04 · advice",
+      "version": "1.0.0",
+      "family_id": "skimage-coffee",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-coffee",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coffee.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Rachel Michetti",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.coffee",
+        "media_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/coffee.png",
+        "image_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "intent": "假如我要让杯子更容易被注意到，有什么值得试一次的调整？如果现在已经能辨认清楚，也可以说不需要改，不要给统一好坏结论。",
+        "product_request": {
+          "purpose": "advice",
+          "intent": {
+            "text": "假如我要让杯子更容易被注意到，有什么值得试一次的调整？如果现在已经能辨认清楚，也可以说不需要改，不要给统一好坏结论。",
+            "preserve": [],
+            "avoid": [
+              "不要给统一好坏结论"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-k01",
+      "name": "chelsea · k01 · observe",
+      "version": "1.0.0",
+      "family_id": "skimage-chelsea",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-chelsea",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Stefan van der Walt",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.chelsea",
+        "media_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/chelsea.png",
+        "image_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "intent": "请描述眼睛、鼻子和胡须的可见细节。我不需要你猜猫的心情，也不要审美评分。",
+        "product_request": {
+          "purpose": "observe",
+          "intent": {
+            "text": "请描述眼睛、鼻子和胡须的可见细节。我不需要你猜猫的心情，也不要审美评分。",
+            "preserve": [],
+            "avoid": [
+              "不需要你猜猫的心情",
+              "不要审美评分"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-k02",
+      "name": "chelsea · k02 · advice",
+      "version": "1.0.0",
+      "family_id": "skimage-chelsea",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-chelsea",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Stefan van der Walt",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.chelsea",
+        "media_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/chelsea.png",
+        "image_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "intent": "我想保留现在这张近距离的感觉，而且不继续裁切。只考虑一个后期调整选项，并说清它适合什么目标。",
+        "product_request": {
+          "purpose": "advice",
+          "intent": {
+            "text": "我想保留现在这张近距离的感觉，而且不继续裁切。只考虑一个后期调整选项，并说清它适合什么目标。",
+            "preserve": [
+              "保留现在这张近距离的感觉"
+            ],
+            "avoid": [
+              "不继续裁切"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-k03",
+      "name": "chelsea · k03 · observe",
+      "version": "1.0.0",
+      "family_id": "skimage-chelsea",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-chelsea",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Stefan van der Walt",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.chelsea",
+        "media_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/chelsea.png",
+        "image_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "intent": "如果有看起来不够清楚的地方，请指出具体区域；不要把原因猜成手抖或对焦失误，也不用给技术分。",
+        "product_request": {
+          "purpose": "observe",
+          "intent": {
+            "text": "如果有看起来不够清楚的地方，请指出具体区域；不要把原因猜成手抖或对焦失误，也不用给技术分。",
+            "preserve": [],
+            "avoid": [
+              "不要把原因猜成手抖或对焦失误",
+              "不用给技术分"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-k04",
+      "name": "chelsea · k04 · observe",
+      "version": "1.0.0",
+      "family_id": "skimage-chelsea",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-chelsea",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Stefan van der Walt",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.chelsea",
+        "media_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/chelsea.png",
+        "image_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "intent": "我原本想记录猫打哈欠的瞬间。先核对这张有没有呈现这个动作，不要为了迎合我的目标说有，也不要打分。",
+        "product_request": {
+          "purpose": "observe",
+          "intent": {
+            "text": "我原本想记录猫打哈欠的瞬间。先核对这张有没有呈现这个动作，不要为了迎合我的目标说有，也不要打分。",
+            "preserve": [],
+            "avoid": [
+              "不要为了迎合我的目标说有",
+              "不要打分"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-a01",
+      "name": "astronaut · a01 · observe",
+      "version": "1.0.0",
+      "family_id": "skimage-astronaut",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-astronaut",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/astronaut.png",
+        "license": {
+          "name": "Public domain; no known copyright restrictions",
+          "url": "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+        },
+        "attribution": "NASA (individual photographer not identified)",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut",
+        "media_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/astronaut.png",
+        "image_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "intent": "只列出人物和周围道具的大致位置关系，不需要识别人名，也不评价构图档次。",
+        "product_request": {
+          "purpose": "observe",
+          "intent": {
+            "text": "只列出人物和周围道具的大致位置关系，不需要识别人名，也不评价构图档次。",
+            "preserve": [],
+            "avoid": [
+              "不需要识别人名",
+              "不评价构图档次"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-a02",
+      "name": "astronaut · a02 · advice",
+      "version": "1.0.0",
+      "family_id": "skimage-astronaut",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-astronaut",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/astronaut.png",
+        "license": {
+          "name": "Public domain; no known copyright restrictions",
+          "url": "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+        },
+        "attribution": "NASA (individual photographer not identified)",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut",
+        "media_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/astronaut.png",
+        "image_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "intent": "我想保留人物、头盔和环境道具之间的故事联系，不只留一张脸。若有建议，请说明什么目标下才值得做。",
+        "product_request": {
+          "purpose": "advice",
+          "intent": {
+            "text": "我想保留人物、头盔和环境道具之间的故事联系，不只留一张脸。若有建议，请说明什么目标下才值得做。",
+            "preserve": [
+              "保留人物、头盔和环境道具之间的故事联系"
+            ],
+            "avoid": [
+              "不只留一张脸"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-a03",
+      "name": "astronaut · a03 · observe",
+      "version": "1.0.0",
+      "family_id": "skimage-astronaut",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-astronaut",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/astronaut.png",
+        "license": {
+          "name": "Public domain; no known copyright restrictions",
+          "url": "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+        },
+        "attribution": "NASA (individual photographer not identified)",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut",
+        "media_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/astronaut.png",
+        "image_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "intent": "请只描述照片中嘴部和眼部可见的表情线索，不推断当时的心情或性格，不要给人物或照片分数。",
+        "product_request": {
+          "purpose": "observe",
+          "intent": {
+            "text": "请只描述照片中嘴部和眼部可见的表情线索，不推断当时的心情或性格，不要给人物或照片分数。",
+            "preserve": [],
+            "avoid": [
+              "不推断当时的心情或性格",
+              "不要给人物或照片分数"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    },
+    {
+      "id": "contract-dev-a04",
+      "name": "astronaut · a04 · advice",
+      "version": "1.0.0",
+      "family_id": "skimage-astronaut",
+      "split": "development",
+      "task": "photography_critique",
+      "source": {
+        "id": "skimage-astronaut",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/astronaut.png",
+        "license": {
+          "name": "Public domain; no known copyright restrictions",
+          "url": "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+        },
+        "attribution": "NASA (individual photographer not identified)",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut",
+        "media_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "tags": [
+        "已见公开照片",
+        "新编虚构请求",
+        "无分数契约开发"
+      ],
+      "input": {
+        "image_path": "POC/Resources/Samples/astronaut.png",
+        "image_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "intent": "假如我的重点是服装和手里的物件，有没有一个可选择的后期调整？没有明显必要时请保留原样，不用给总评。",
+        "product_request": {
+          "purpose": "advice",
+          "intent": {
+            "text": "假如我的重点是服装和手里的物件，有没有一个可选择的后期调整？没有明显必要时请保留原样，不用给总评。",
+            "preserve": [
+              "没有明显必要时请保留原样"
+            ],
+            "avoid": [
+              "不用给总评"
+            ]
+          },
+          "response_language": "en",
+          "rating_request": null
+        }
+      }
+    }
+  ],
+  "configurations": [
+    {
+      "id": "sidelit-scorefree-author-control-v1",
+      "name": "作者基线 · 原分数契约",
+      "version": "1.0.0",
+      "mode": "fixed_context_rerun",
+      "parameters": {
+        "protocol_version": "sidelit-critique-eval-v2",
+        "profile_id": "author-schema-v1"
+      },
+      "intent_aware": false
+    },
+    {
+      "id": "sidelit-scorefree-single-v1",
+      "name": "A · 单次无分数观察建议",
+      "version": "1.1.0",
+      "mode": "fixed_context_rerun",
+      "parameters": {
+        "protocol_version": "sidelit-critique-eval-v2",
+        "profile_id": "score-free-observation-v1"
+      },
+      "intent_aware": true
+    },
+    {
+      "id": "sidelit-scorefree-evidence-first-v1",
+      "name": "B · 先观察后建议",
+      "version": "1.1.0",
+      "mode": "fixed_context_rerun",
+      "parameters": {
+        "protocol_version": "sidelit-critique-eval-v2",
+        "profile_id": "score-free-evidence-first-v1"
+      },
+      "intent_aware": true
+    }
+  ]
+}

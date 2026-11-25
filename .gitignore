@@ -4,4 +4,14 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+admin.token
+open-admin.html
 node_modules/

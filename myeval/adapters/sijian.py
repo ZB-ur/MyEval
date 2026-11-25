@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -16,12 +17,11 @@ from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 from uuid import uuid4
 
-VERSION = "sijian-http-v1"
-DEFAULT_ROOT = Path("/Users/lddmay/AiCoding/Sijian")
+VERSION = "sijian-http-v2"
+DEFAULT_ROOT = Path.home() / "AiCoding" / "Sijian"
 RESOURCE_PATHS = [
     "services/agent/server.py",
-    "services/agent/prompts/discover-v4.txt",
-    "services/agent/prompts/review-v2.txt",
+    "services/agent/evaluation_profiles.py",
     "services/agent/prompts/boundary-v1.txt",
     "services/agent/prompts/boundary-review-v2.txt",
     "services/agent/schemas/discover-output-v1.json",
@@ -51,23 +51,40 @@ def _git(root, *args):
 
 def describe(configuration):
     root = _root()
-    hashes = {name: _hash((root / name).read_bytes()) if (root / name).is_file() else None
-              for name in RESOURCE_PATHS}
-    head = _git(root, "rev-parse", "HEAD")
-    dirty = _git(root, "diff", "--binary", "HEAD", "--", *RESOURCE_PATHS)
     parameters = configuration.get("parameters", {})
+    profile_id = parameters.get("profile", "baseline-v1")
+    profile = None
+    profiles = []
+    profile_error = None
+    resources = list(RESOURCE_PATHS)
+    try:
+        # Only this product-owned module is loaded; configuration never selects a module or path.
+        spec = importlib.util.spec_from_file_location("sijian_evaluation_profiles", root / "services/agent/evaluation_profiles.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        profiles = list(module.profile_ids())
+        profile = module.describe_profile(profile_id)
+        resources += ["services/agent/" + name for name in profile["files"]]
+    except (OSError, ValueError, ImportError, SyntaxError, AttributeError, TypeError) as error:
+        profile_error = {"code": "unsupported_prompt_profile" if isinstance(error, ValueError) else "profile_source_unavailable",
+                         "error_type": type(error).__name__}
+    hashes = {name: _hash((root / name).read_bytes()) if (root / name).is_file() else None
+              for name in dict.fromkeys(resources)}
+    head = _git(root, "rev-parse", "HEAD")
+    dirty = _git(root, "diff", "--binary", "HEAD", "--", *hashes)
     return {
         "adapter": VERSION,
         "adapter_sha256": _hash(Path(__file__).read_bytes()),
-        "available": all(hashes.values()),
+        "available": bool(profile) and all(hashes.values()),
+        "prompt_profile": profile, "profile_error": profile_error,
         "source": {"project_root": str(root), "entrypoint": "services/agent/server.py",
                    "git_head": head.decode().strip() if head else None,
                    "relevant_dirty": bool(dirty), "dirty_sha256": _hash(dirty) if dirty else None,
                    "files": hashes},
         "requested": {"model": parameters.get("model", "gpt-6-sol"),
-                      "reasoning_effort": parameters.get("effort", "low")},
+                      "reasoning_effort": parameters.get("effort", "low"), "prompt_profile": profile_id},
         "effective": {"model": None, "reasoning_effort": None, "provider_model_version": None},
-        "capabilities": {"tasks": ["discover", "review"], "multi_turn": "fixed_history_only",
+        "capabilities": {"tasks": ["discover", "review"], "prompt_profiles": profiles, "multi_turn": "fixed_history_only",
                          "audio": "unsupported", "cancel": "local_bridge_and_cli_process_group",
                          "provider_cancel_confirmation": "unsupported", "environment_reset": True,
                          "state_snapshot": True, "trace_rescore": "unsupported",
@@ -113,6 +130,9 @@ def _observed(metadata):
     return {"requested": metadata.get("requested", {}),
             "effective": {key: None if value == "unknown" else value for key, value in effective.items()},
             "verification": "Effective fields remain unknown unless present in the product trace.",
+            "product_prompt_profile": metadata.get("prompt_profile"),
+            "prompt_version": metadata.get("prompt_version"),
+            "prompt_template_sha256": metadata.get("prompt_template_sha256"),
             "source_run_id": metadata.get("run_id")}
 
 
@@ -148,7 +168,8 @@ def _rules(task, request, accepted, metadata, case):
 def run(case, configuration, ctx):
     mode = configuration.get("mode", "fixed_context_rerun")
     task = case.get("task")
-    limitations = describe(configuration)["limitations"]
+    source = describe(configuration)
+    limitations = source["limitations"]
     empty = {"output": None, "review_output": None, "observed_configuration": {}, "usage": None,
              "cost": None, "assessments": [], "limitations": limitations}
     if mode not in {"fixed_context_rerun", "isolated_full_run"} or task not in {"discover", "review"}:
@@ -161,14 +182,17 @@ def run(case, configuration, ctx):
     parameters = configuration.get("parameters", {})
     model = parameters.get("model", "gpt-6-sol")
     effort = parameters.get("effort", "low")
+    profile_id = parameters.get("profile", "baseline-v1")
     if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9._-]{1,100}", model) or effort not in {"low", "medium", "high", "xhigh"}:
         return {**empty, "status": "unsupported", "error": {"code": "unsupported_configuration"},
                 "review_output": {"状态": "请求配置不受支持"}}
+    if (source.get("profile_error") or {}).get("code") == "unsupported_prompt_profile":
+        return {**empty, "status": "unsupported", "error": source["profile_error"],
+                "review_output": {"状态": "业务提示词方案不在产品白名单内"}}
 
     root = Path(ctx.root).resolve()
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
     trace_root = root / "sijian-traces"
-    source = describe(configuration)
     (root / "sijian-provenance.json").write_text(_json(source))
     if not source["available"]:
         return {**empty, "status": "failed", "error": {"code": "product_source_unavailable"},
@@ -221,7 +245,7 @@ def run(case, configuration, ctx):
     try:
         command = [sys.executable, str(_root() / "services/agent/server.py"), "--port", str(port),
                    "--model", model, "--effort", effort, "--timeout", str(bridge_timeout),
-                   "--trace-root", str(trace_root)]
+                   "--trace-root", str(trace_root), "--profile", profile_id]
         with (root / "sijian-service.log").open("wb") as service_log:
             process = subprocess.Popen(command, cwd=root, stdin=subprocess.DEVNULL,
                                        stdout=service_log, stderr=service_log)

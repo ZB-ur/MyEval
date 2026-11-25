@@ -161,7 +161,7 @@ export async function download(url,filename){
   a.href=href;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1000);
 }
 
-Object.assign(names,{sidelit:'Sidelit',paused:'已暂停',pending:'待处理',stopped:'已停止',inconclusive:'证据不足',blocked:'未满足',synthetic:'合成材料',licensed_public:'许可公开材料',authorized_private:'已授权私有材料',development:'开发集',holdout:'留出集',all:'全部材料',cancel_requested:'请求取消中',not_run:'未运行',complete:'已完成',error:'异常',trace_import:'历史轨迹导入'});
+Object.assign(names,{demo:'办公演示',sidelit:'Sidelit',paused:'已暂停',pending:'待处理',stopped:'已停止',inconclusive:'证据不足',blocked:'未满足',synthetic:'合成材料',licensed_public:'许可公开材料',authorized_private:'已授权私有材料',development:'开发集',holdout:'留出集',all:'全部材料',cancel_requested:'请求取消中',not_run:'未运行',complete:'已完成',error:'异常',trace_import:'历史轨迹导入'});
 export const number = value => typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('zh-CN') : '—';
 export function sourceLabel(value){
   const source = value?.source || value;

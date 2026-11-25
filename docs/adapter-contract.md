@@ -1,4 +1,8 @@
-# 首版内部适配契约 v1
+# 适配一个 Agent
+
+最小可运行参考是 [demo 适配器](../myeval/adapters/demo.py) 与 [demo 任务包](../taskpacks/demo.json)。它返回预编写的办公文本，演示真实调度与证据保存，不调用模型。接入自己的 Agent 时，将 `run` 中的交付来源替换为该 Agent 的真实调用入口；不要在评测侧另写一套业务提示词。
+
+以下契约沿用首版接口。V2 的历史轨迹重评分由独立评分服务实现，不要求产品适配器支持 `trace_rescore`；见[独立评分](evaluation-v2.md)。
 
 公共层使用 Python 标准库、SQLite、后台隔离 worker 与本机 HTTP UI。适配器只依赖标准库；产品自己的运行环境沿用已安装环境。产品调用是真实共享入口，不复制提示词。
 

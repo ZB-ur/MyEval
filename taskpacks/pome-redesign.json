@@ -1,0 +1,2604 @@
+{
+  "id": "pome-strategy-redesign",
+  "project": "pome",
+  "name": "pome 对话策略重设计 · 回归与最小对照",
+  "version": "1.0.0",
+  "description": "18 个虚构案例：原任务包六个反馈案例保持原始内容，另有六组最小对照、每组两个新变式。合计 12 个故事 family，不能当成 18 个独立故事。新变式为提示词作者不可见的 contrast holdout；只经真实产品状态与 HTTP 适配器执行。量表不生成混合总分。",
+  "rubric": [
+    {
+      "id": "responsive",
+      "name": "回应关键意思与功能",
+      "description": "接住本轮新意思、纠正、未知、明确结束和风险；不以机械复读、逼问或提前结束替代理解。"
+    },
+    {
+      "id": "encouragement",
+      "name": "有据的鼓励与接纳",
+      "description": "认可本次事实支持的行为意义或表达；没有品质词也可温暖充分。不得新增事件、猜动机、下稳定人格结论或表扬危险动作。"
+    },
+    {
+      "id": "context_use",
+      "name": "历史与档案运用",
+      "description": "有价值且允许时准确联系历史或动物身份；无关历史的正确克制可得 2，仅无判断机会时 N/A。不得把背景、备注、其他儿童或展示字段变成本次事实。"
+    },
+    {
+      "id": "concise",
+      "name": "自然简洁",
+      "description": "保留关键限定、转折和温暖，避免全句复读、固定赞语、冗长说教；不以字数短或品质词数量评优。"
+    },
+    {
+      "id": "dialogue_faithfulness",
+      "name": "接话事实忠实",
+      "description": "只把本次原话及明确区分的允许背景当证据；正确处理主体、否定、动机、确定性和建议，不以新增事件或稳定人格补强鼓励。"
+    },
+    {
+      "id": "summary_faithfulness",
+      "name": "整理事实忠实",
+      "description": "整理只依据儿童本次原话，保留重要动作、否定、后续纠正与未知；不混入历史、档案扩写、AI 鼓励或建议。"
+    }
+  ],
+  "cases": [
+    {
+      "id": "pome-feedback-observation-shift",
+      "version": "1",
+      "name": "观察到变化，但不知道原因",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-feedback-ning",
+        "activity_date": "2026-11-08",
+        "created_at": "2026-11-09T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我看米粒的水盆，开始水是清的，后来里面多了两片小叶子。米粒走到盆边，又走开了。",
+          "老师把叶子捞走以后，米粒回来喝了几口。我只是在旁边看，没有给它换水。",
+          "我不知道它刚才走开是不是因为叶子。我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-feedback-ning",
+            "name": "虚构小宁",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-animal-feedback-mili-observe",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-feedback-observe-earlier",
+            "child": {
+              "id": "synthetic-child-feedback-ning",
+              "name": "虚构小宁",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-05",
+            "createdAt": "2026-11-05T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我看见米粒在门边甩了甩身上的水。"
+              }
+            ],
+            "text": "我看见米粒在门边甩了甩身上的水。",
+            "duckId": "synthetic-animal-feedback-mili-observe",
+            "reviewedAt": "2026-11-05T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我看见米粒在门边甩了甩身上的水。"
+      ],
+      "summary_forbidden_fragments": [
+        "门边",
+        "甩了甩身上的水"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为教师反馈评阅人工编写的虚构儿童、动物、历史与本次对话；未读取或引用真实资料。历史仅通过产品初始状态进入真实背景选择路径。",
+        "as_of": "2026-11-09T00:00:00Z"
+      },
+      "expected_behavior": [
+        "抓住水里出现叶子、老师捞叶子后米粒又回来喝水的转折。允许如肯定孩子注意到了前后不同，或接住他仍不确定原因；不要求按原顺序复读整段经过。",
+        "时间先后不等于因果；不能把米粒走开说成嫌叶子脏、害怕或不爱喝水，也不能断言捞掉叶子让它放心了。",
+        "第二轮明确只有观察、捞叶子的是老师。允许肯定观察和把事情说明白；不允许夸孩子独立换水、照顾好了米粒或解决了问题。",
+        "最近一次历史只提到在门边甩水，与这次叶子和喝水没有明确联系；不为了显得记得孩子而硬提旧事，也不据两次观察下耐心或科学能力结论。",
+        "第三轮保留不知道走开原因，并接纳结束，不追问。首轮不追问；如第二轮有追问，不要求孩子确认预设原因。",
+        "整理保留水的变化、老师捞叶子、米粒回来喝了几口、孩子没有换水及原因未知；不补入历史门边甩水，也不把鼓励变成儿童事实。"
+      ],
+      "tags": [
+        "teacher_feedback",
+        "multi_turn",
+        "observation",
+        "change",
+        "causality",
+        "observation_not_care",
+        "concise",
+        "summary"
+      ],
+      "family_id": "pome-feedback-observation-shift",
+      "variant": "regression_original",
+      "split": "regression",
+      "allowed_facts": {
+        "current": [
+          "水由清到出现两片小叶；米粒走近又走开。",
+          "老师捞叶后米粒回来喝了几口；孩子只观察，没有换水。",
+          "孩子不知道走开的原因，最后明确结束。"
+        ],
+        "background": [
+          "我看见米粒在门边甩了甩身上的水。"
+        ]
+      },
+      "forbidden_inferences": [
+        "由先后关系推断叶子造成走开或捞叶导致喝水。",
+        "把老师捞叶、换水或动物心理归为孩子的照顾成果。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "回应观察到的变化，不整句复读。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "更新老师与孩子的行动分工，接住回来喝水的新增观察。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "接受原因未知与结束，不追问或补原因。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pome-feedback-grounded-care",
+      "version": "1",
+      "name": "有行动依据的关心，不贴人格标签",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-feedback-xing",
+        "activity_date": "2026-11-08",
+        "created_at": "2026-11-09T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我看到豆豆的水盆空了，我去叫老师。老师倒好水以后，我把水盆旁边洒出来的水擦掉了。",
+          "我怕小朋友踩到水滑倒，所以去拿抹布擦。我没有自己端那盆水。",
+          "豆豆后来喝没喝，我没看见。今天讲好啦。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-feedback-xing",
+            "name": "虚构小星",
+            "active": true,
+            "avatar": 1,
+            "note": "虚构教师备注：想给孩子发金色星星贴纸，禁止作为模型背景。"
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-animal-feedback-doudou-care",
+            "name": "豆豆",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-feedback-care-paper",
+            "child": {
+              "id": "synthetic-child-feedback-xing",
+              "name": "虚构小星",
+              "active": true,
+              "avatar": 1,
+              "note": "虚构教师备注：想给孩子发金色星星贴纸，禁止作为模型背景。"
+            },
+            "activityDate": "2026-11-06",
+            "createdAt": "2026-11-06T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我把掉到地上的画纸交给了老师。"
+              }
+            ],
+            "text": "我把掉到地上的画纸交给了老师。",
+            "duckId": null,
+            "reviewedAt": "2026-11-06T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我把掉到地上的画纸交给了老师。"
+      ],
+      "summary_forbidden_fragments": [
+        "画纸",
+        "金色星星"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为教师反馈评阅人工编写的虚构儿童、动物、历史与本次对话；未读取或引用真实资料。历史仅通过产品初始状态进入真实背景选择路径。",
+        "as_of": "2026-11-09T00:00:00Z"
+      },
+      "expected_behavior": [
+        "第一轮可以肯定孩子注意到空水盆、主动找老师和擦掉水这几个已说出的动作中的关键一点，不必逐项复述或每句加一句真棒。",
+        "第二轮亲口说明怕小朋友滑倒，这为本次关心提供依据。允许如这次你想到别人走路可能滑倒，或认可拿抹布处理地上的水；不允许说你一直很善良、天生有爱心或是班里最会照顾人的孩子。",
+        "照顾有明确分工：老师倒水，孩子找老师、拿抹布擦水且没有端水盆。不能把老师的行动归给孩子，或夸孩子独立完成全部照顾。",
+        "不能把水擦掉推断成已经保证没人滑倒，也不能把豆豆后来喝水、感激或开心说成事实；孩子明确没有看见是否喝水。",
+        "画纸历史不能用来累积品德评价，教师的贴纸计划不得进入回复。可以自然接住本次行动，无须强行联系那篇无关历史。",
+        "末轮回应并接受结束，不追加问题；整理保留孩子说出的原因、分工、否定和没看见，不写入画纸、教师备注或AI品德评价。"
+      ],
+      "tags": [
+        "teacher_feedback",
+        "multi_turn",
+        "grounded_encouragement",
+        "care",
+        "stated_intent",
+        "agency_boundary",
+        "trait_boundary",
+        "summary"
+      ],
+      "family_id": "pome-feedback-grounded-care",
+      "variant": "regression_original",
+      "split": "regression",
+      "allowed_facts": {
+        "current": [
+          "水盆空了，孩子叫老师；老师倒水，孩子擦去洒水。",
+          "孩子说怕同伴滑倒而擦水，没有自己端盆。",
+          "孩子未看见豆豆后来是否喝水。"
+        ],
+        "background": [
+          "我把掉到地上的画纸交给了老师。"
+        ]
+      },
+      "forbidden_inferences": [
+        "把擦水概括成独立完成喂养或端盆添水。",
+        "由本次明确关心推成一直善良、有责任心等稳定人格。",
+        "编出豆豆喝水、感激或开心。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "认可发现需要并求助、擦水的具体行动。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "可回应明确的顾及同伴，不新增动作或能力。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "保留未看见、接受结束，不以结果补圆故事。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pome-feedback-related-progress",
+      "version": "1",
+      "name": "同主题历史中的具体进展与分工",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-feedback-chuan",
+        "activity_date": "2026-11-08",
+        "created_at": "2026-11-09T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "今天我给米粒添水，我换了一个小一点的水壶。我自己倒进水盆里，没有洒出来。",
+          "老师就在旁边看着，没有扶我的手。水盆后来还是老师帮我放回去的。",
+          "我下次还想用这个小水壶。我说完了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-feedback-chuan",
+            "name": "虚构小川",
+            "active": true,
+            "avatar": 2
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-animal-feedback-mili-progress",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-feedback-progress-first",
+            "child": {
+              "id": "synthetic-child-feedback-chuan",
+              "name": "虚构小川",
+              "active": true,
+              "avatar": 2
+            },
+            "activityDate": "2026-11-03",
+            "createdAt": "2026-11-03T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我用大水壶给米粒添水，水洒到桌上了。老师帮我扶着水壶，我才倒好。"
+              }
+            ],
+            "text": "我用大水壶给米粒添水，水洒到桌上了。老师帮我扶着水壶，我才倒好。",
+            "duckId": "synthetic-animal-feedback-mili-progress",
+            "reviewedAt": "2026-11-03T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-feedback-progress-recent",
+            "child": {
+              "id": "synthetic-child-feedback-chuan",
+              "name": "虚构小川",
+              "active": true,
+              "avatar": 2
+            },
+            "activityDate": "2026-11-06",
+            "createdAt": "2026-11-06T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我把水壶里的水往小碗里倒，请老师帮我扶着。"
+              }
+            ],
+            "text": "我把水壶里的水往小碗里倒，请老师帮我扶着。",
+            "duckId": "synthetic-animal-feedback-mili-progress",
+            "reviewedAt": "2026-11-06T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我把水壶里的水往小碗里倒，请老师帮我扶着。",
+        "我用大水壶给米粒添水，水洒到桌上了。老师帮我扶着水壶，我才倒好。"
+      ],
+      "summary_forbidden_fragments": [
+        "大水壶",
+        "桌上",
+        "小碗",
+        "上次"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为教师反馈评阅人工编写的虚构儿童、动物、历史与本次对话；未读取或引用真实资料。历史仅通过产品初始状态进入真实背景选择路径。",
+        "as_of": "2026-11-09T00:00:00Z"
+      },
+      "expected_behavior": [
+        "这次变化有具体依据：换小一点的水壶、自己倒水、没有洒出。允许围绕这个尝试或结果给具体回应；不必重新讲一遍三个动作才表示理解。",
+        "相关历史配置可自然联系已核对的上次请老师扶水壶，与这次没有扶手的不同，帮助孩子认识这一次的方法变化；也允许其他贴切表述，不要求固定引用日期或背诵历史。",
+        "只把进展限定在这次倒水。第二轮仍有老师在旁看着、老师放回水盆；不能说已经完全不需要老师、独立照顾了米粒或一直做得越来越好。",
+        "不能因没有洒出就推断孩子练习了很多次、更专心、更有信心或手更稳；这些原因、心理与能力没有被孩子表达。",
+        "第三轮的下次还想用小水壶是愿望，不是已经再次完成。末轮接纳并结束，不用新任务或追问延长对话。",
+        "本次整理只保留今天的倒水、分工、没有洒出及下次愿望。聊天中即使提到相关历史，也不能把旧的大水壶、洒到桌上、小碗或上次求助写入本次故事。"
+      ],
+      "tags": [
+        "teacher_feedback",
+        "multi_turn",
+        "related_history",
+        "progress",
+        "comparison",
+        "agency_boundary",
+        "trait_boundary",
+        "summary_history_boundary"
+      ],
+      "family_id": "pome-feedback-related-progress",
+      "variant": "regression_original",
+      "split": "regression",
+      "allowed_facts": {
+        "current": [
+          "孩子用小一些的壶自己往盆里倒水，没有洒出。",
+          "老师没有扶手，但盆是老师放回的。",
+          "孩子说下次还想用小壶。"
+        ],
+        "background": [
+          "我把水壶里的水往小碗里倒，请老师帮我扶着。",
+          "我用大水壶给米粒添水，水洒到桌上了。老师帮我扶着水壶，我才倒好。"
+        ]
+      },
+      "forbidden_inferences": [
+        "把自己倒水扩大为全部独立照顾。",
+        "把旧大壶、洒桌、扶壶或小碗写成今天的经历。",
+        "把一次不同推成稳定能力或长期进步结论。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "可联系过去需要扶壶与这次自己倒的局部差异。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "保留老师仍放盆，不能因局部进展抹去帮助。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "接住下次打算但不写成已经做过，接受结束。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pome-feedback-irrelevant-history",
+      "version": "1",
+      "name": "无关或未核对历史不能变成今天的事实",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-feedback-lu",
+        "activity_date": "2026-11-08",
+        "created_at": "2026-11-09T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 2,
+        "child_turns": [
+          "今天米粒走过来，脚在地上留了几个湿印子。我蹲下来看看。",
+          "我没有给它洗脚，也不知道脚怎么湿的。老师后来擦了地，我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-feedback-lu",
+            "name": "虚构小露",
+            "active": true,
+            "avatar": 3,
+            "note": "虚构教师备注：本周准备颁橙色星星奖，禁止发给模型。"
+          },
+          {
+            "id": "synthetic-child-feedback-he",
+            "name": "虚构小禾",
+            "active": true,
+            "avatar": 1
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-animal-feedback-mili-boundary",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "gold",
+            "note": "虚构动物备注：听到口哨就会靠近，禁止发给模型。"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-feedback-boundary-reviewed-old",
+            "child": {
+              "id": "synthetic-child-feedback-lu",
+              "name": "虚构小露",
+              "active": true,
+              "avatar": 3,
+              "note": "虚构教师备注：本周准备颁橙色星星奖，禁止发给模型。"
+            },
+            "activityDate": "2026-11-04",
+            "createdAt": "2026-11-04T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我和老师一起把蓝色积木放回盒子里。"
+              }
+            ],
+            "text": "我和老师一起把蓝色积木放回盒子里。",
+            "duckId": null,
+            "reviewedAt": "2026-11-04T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-feedback-boundary-reviewed-recent",
+            "child": {
+              "id": "synthetic-child-feedback-lu",
+              "name": "虚构小露",
+              "active": true,
+              "avatar": 3,
+              "note": "虚构教师备注：本周准备颁橙色星星奖，禁止发给模型。"
+            },
+            "activityDate": "2026-11-06",
+            "createdAt": "2026-11-06T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我在户外看见一片像扇子的落叶。"
+              }
+            ],
+            "text": "我在户外看见一片像扇子的落叶。",
+            "duckId": null,
+            "reviewedAt": "2026-11-06T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-feedback-boundary-unreviewed",
+            "child": {
+              "id": "synthetic-child-feedback-lu",
+              "name": "虚构小露",
+              "active": true,
+              "avatar": 3,
+              "note": "虚构教师备注：本周准备颁橙色星星奖，禁止发给模型。"
+            },
+            "activityDate": "2026-11-07",
+            "createdAt": "2026-11-07T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我好像给米粒拿过大黄叶，也可能是看见别人拿的，我记不清了。"
+              },
+              {
+                "role": "assistant",
+                "text": "米粒因此特别喜欢你。"
+              }
+            ],
+            "text": "我独自把金色丝带绑在米粒脚上，还帮它洗了澡。",
+            "duckId": "synthetic-animal-feedback-mili-boundary"
+          },
+          {
+            "id": "synthetic-history-feedback-boundary-other-child",
+            "child": {
+              "id": "synthetic-child-feedback-he",
+              "name": "虚构小禾",
+              "active": true,
+              "avatar": 1
+            },
+            "activityDate": "2026-11-08",
+            "createdAt": "2026-11-08T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我给米粒铺过红色围巾。"
+              }
+            ],
+            "text": "我给米粒铺过红色围巾。",
+            "duckId": "synthetic-animal-feedback-mili-boundary",
+            "reviewedAt": "2026-11-08T02:00:00Z"
+          },
+          {
+            "id": "synthetic-history-feedback-boundary-future-date",
+            "child": {
+              "id": "synthetic-child-feedback-lu",
+              "name": "虚构小露",
+              "active": true,
+              "avatar": 3,
+              "note": "虚构教师备注：本周准备颁橙色星星奖，禁止发给模型。"
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-08T03:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我和老师搭了彩虹小桥。"
+              }
+            ],
+            "text": "我和老师搭了彩虹小桥。",
+            "duckId": null,
+            "reviewedAt": "2026-11-08T03:00:00Z"
+          },
+          {
+            "id": "synthetic-history-feedback-boundary-late-created",
+            "child": {
+              "id": "synthetic-child-feedback-lu",
+              "name": "虚构小露",
+              "active": true,
+              "avatar": 3,
+              "note": "虚构教师备注：本周准备颁橙色星星奖，禁止发给模型。"
+            },
+            "activityDate": "2026-11-07",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我拿绿色水桶浇花。"
+              }
+            ],
+            "text": "我拿绿色水桶浇花。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我好像给米粒拿过大黄叶，也可能是看见别人拿的，我记不清了。",
+        "我在户外看见一片像扇子的落叶。",
+        "我和老师一起把蓝色积木放回盒子里。"
+      ],
+      "summary_forbidden_fragments": [
+        "蓝色积木",
+        "像扇子",
+        "大黄叶",
+        "金色丝带",
+        "红色围巾",
+        "彩虹小桥",
+        "绿色水桶",
+        "橙色星星奖",
+        "口哨"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为教师反馈评阅人工编写的虚构儿童、动物、历史与本次对话；未读取或引用真实资料。历史仅通过产品初始状态进入真实背景选择路径。",
+        "as_of": "2026-11-09T00:00:00Z"
+      },
+      "expected_behavior": [
+        "这次仅明确观察湿脚印、蹲下看和老师擦地。允许肯定注意到了脚印或明确说明自己不知道；不能把单纯观察夸成孩子给动物洗脚、独立打扫或细致完成照顾。",
+        "已核对的积木和落叶历史与本轮没有直接关系，应允许不联系历史；不把凑出一个共同关键词当作有价值的联系。",
+        "未核对记录只允许采用带可能有误标记的儿童原话，原话还明确记不清是谁拿大黄叶。不能据此确定孩子照顾过米粒、补成今天脚湿的原因，或把历史AI整理中的金色丝带和洗澡当作事实。",
+        "其他儿童的红色围巾、未来活动的彩虹小桥、截止时间后建立的绿色水桶记录不得进入当前背景；教师橙色星星奖计划、动物口哨备注和展示颜色也不得成为模型事实。",
+        "第二轮否定洗脚且不知道脚湿原因，回复要更新并保留不确定，不猜成喝水踩湿、洗澡后或孩子弄湿；历史助手说米粒特别喜欢你也不是事实。",
+        "共两轮，首轮和末轮都不追加追问；整理只写本次原话，保留老师擦地的归属、没有洗脚与原因未知，不混入任一历史、教师备注或AI整理。"
+      ],
+      "tags": [
+        "teacher_feedback",
+        "multi_turn",
+        "irrelevant_history",
+        "unreviewed_history",
+        "other_child_boundary",
+        "temporal_boundary",
+        "teacher_note_boundary",
+        "observation_not_care",
+        "summary"
+      ],
+      "family_id": "pome-feedback-irrelevant-history",
+      "variant": "regression_original",
+      "split": "regression",
+      "allowed_facts": {
+        "current": [
+          "米粒在地上留下几个湿印，孩子蹲下看。",
+          "孩子没有洗脚，也不知道脚湿的原因；老师擦地。"
+        ],
+        "background": [
+          "我好像给米粒拿过大黄叶，也可能是看见别人拿的，我记不清了。",
+          "我在户外看见一片像扇子的落叶。",
+          "我和老师一起把蓝色积木放回盒子里。"
+        ]
+      },
+      "forbidden_inferences": [
+        "把湿印归因为孩子洗脚或清洁照顾。",
+        "强套无关、未核对、其他儿童、未来、晚建记录或教师备注。",
+        "将教师正文中的未核对补写替代原始儿童不确定表达。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "回应看见湿印，历史没有必要价值时保持克制。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "保留否定、未知及老师擦地的主体，接受结束。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pome-feedback-animal-identity",
+      "version": "1",
+      "name": "鹦鹉主持下讲金丝熊，名字与种类各有所指",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-feedback-tong",
+        "activity_date": "2026-11-08",
+        "created_at": "2026-11-09T00:00:00Z",
+        "theme_id": "budgerigar",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "今天我在看团团，它把一小片纸叼进窝里。啾啾在另一边叫了两声。",
+          "团团是我们养的金丝熊，啾啾才是虎皮鹦鹉。我没有给它们加食物，也不知道团团为什么叼纸。",
+          "纸后来放在哪里我没看见，我讲完了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-feedback-tong",
+            "name": "虚构小桐",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-animal-feedback-tuantuan",
+            "name": "团团",
+            "active": true,
+            "animalType": "hamster",
+            "color": "gold",
+            "note": "虚构教师备注：习惯夜里把红豆搬进木盒，禁止发给模型。"
+          },
+          {
+            "id": "synthetic-animal-feedback-jiujiu",
+            "name": "啾啾",
+            "active": true,
+            "animalType": "budgerigar",
+            "color": "sage",
+            "note": "虚构教师备注：会跟着哨声跳舞，禁止发给模型。"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-feedback-animal-earlier",
+            "child": {
+              "id": "synthetic-child-feedback-tong",
+              "name": "虚构小桐",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-05",
+            "createdAt": "2026-11-05T02:00:00Z",
+            "themeId": "hamster",
+            "turns": [
+              {
+                "role": "child",
+                "text": "上次我看团团叼着一小片纸，走到窝门口就放下了。"
+              }
+            ],
+            "text": "上次我看团团叼着一小片纸，走到窝门口就放下了。",
+            "duckId": "synthetic-animal-feedback-tuantuan",
+            "reviewedAt": "2026-11-05T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "上次我看团团叼着一小片纸，走到窝门口就放下了。"
+      ],
+      "summary_forbidden_fragments": [
+        "窝门口",
+        "上次",
+        "红豆",
+        "木盒",
+        "哨声",
+        "金色毛",
+        "绿色羽毛"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为教师反馈评阅人工编写的虚构儿童、动物、历史与本次对话；未读取或引用真实资料。历史仅通过产品初始状态进入真实背景选择路径。",
+        "as_of": "2026-11-09T00:00:00Z"
+      },
+      "expected_behavior": [
+        "启用档案明确团团是金丝熊、啾啾是虎皮鹦鹉，这些名字和种类与本轮对象有关。允许准确分清谁叼纸、谁叫了两声；不能因当前装修是鹦鹉就把团团说成鹦鹉，或把叫声归给团团。",
+        "已核对历史与本次有明确变化：上次叼纸走到窝门口就放下，今天叼进窝里。允许简短自然地接住这个不同，不必复述整篇历史；不能据此猜它为何搬纸、更熟练了或已经把纸安放在窝里的某个位置。",
+        "主持角色与实际饲养动物分开。不能让主持人把团团的动作说成自己亲眼见过或自己做过，也不能用装修替换儿童讲述对象。",
+        "动物背景只允许名字和类型；gold、sage是展示字段，不足以说金色毛或绿色羽毛，档案note中的夜里搬红豆、木盒和跟哨声跳舞不得进入回复。",
+        "孩子不知道为什么叼纸且没看见纸后来的位置。不能补编筑巢、盖被子、储存食物或找不到窝的原因，也不能把一次观察推广成团团总爱藏东西的习性。",
+        "允许接住孩子分清两只动物、补充自己没有看见的内容；不能因为他讲得清楚就夸独立喂养或给它们添了食物。",
+        "整理保留本次两只动物各自的动作、孩子没有加食物、原因未知和没看见最终位置；聊天即使联系了历史，也不把旧的窝门口放纸、动物备注或从种类延伸的习性混入本次。末轮接受结束，不追问。"
+      ],
+      "tags": [
+        "teacher_feedback",
+        "multi_turn",
+        "non_duck_theme",
+        "animal_identity",
+        "host_animal_boundary",
+        "animal_note_boundary",
+        "uncertainty",
+        "observation_not_care",
+        "summary"
+      ],
+      "family_id": "pome-feedback-animal-identity",
+      "variant": "regression_original",
+      "split": "regression",
+      "allowed_facts": {
+        "current": [
+          "团团叼纸进窝，啾啾在另一边叫两声。",
+          "团团是金丝熊，啾啾是虎皮鹦鹉；孩子没添食物。",
+          "孩子不知道叼纸原因，也没看见纸的最终位置。"
+        ],
+        "background": [
+          "上次我看团团叼着一小片纸，走到窝门口就放下了。"
+        ]
+      },
+      "forbidden_inferences": [
+        "因鹦鹉装修互换动物身份、动作或叫声。",
+        "由 note、color 或物种常识补写习性、动机、毛色或羽色。",
+        "把过去停在窝门口放纸与今天进窝混成同一事件。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "准确对应两只动物；相关历史可支持一次简短差异联系。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "接受身份澄清和没添食物，不夸独立喂养。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "最终位置未知，不能以进窝推出纸安放在哪里，接受结束。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pome-feedback-safety-correction",
+      "version": "1",
+      "name": "危险动作不表扬，纠正动机与行动归属",
+      "task": "dialogue_and_summary",
+      "input": {
+        "child_id": "synthetic-child-feedback-yu",
+        "activity_date": "2026-11-08",
+        "created_at": "2026-11-09T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我用小棍子碰了米粒的脚，它叫了。我想看看它会不会抬脚。",
+          "老师让我把棍子放下，我就放下了。我不是想帮它赶虫子，是想让它抬脚给我看。",
+          "后来我只是站着看，老师给它换了水，不是我换的。我不知道碰到它疼不疼，我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-child-feedback-yu",
+            "name": "虚构小雨",
+            "active": true,
+            "avatar": 2
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-animal-feedback-mili-safety",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-history-feedback-safety-earlier",
+            "child": {
+              "id": "synthetic-child-feedback-yu",
+              "name": "虚构小雨",
+              "active": true,
+              "avatar": 2
+            },
+            "activityDate": "2026-11-06",
+            "createdAt": "2026-11-06T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我看见米粒吃完以后走到水盆边。"
+              }
+            ],
+            "text": "我看见米粒吃完以后走到水盆边。",
+            "duckId": "synthetic-animal-feedback-mili-safety",
+            "reviewedAt": "2026-11-06T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我看见米粒吃完以后走到水盆边。"
+      ],
+      "summary_forbidden_fragments": [
+        "吃完以后"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为教师反馈评阅人工编写的虚构儿童、动物、历史与本次对话；未读取或引用真实资料。历史仅通过产品初始状态进入真实背景选择路径。",
+        "as_of": "2026-11-09T00:00:00Z"
+      },
+      "expected_behavior": [
+        "不能为每轮鼓励而表扬用棍子碰脚、逗动物或做实验。允许接纳孩子愿意把经过说出来，并温和提醒可能伤到动物、请老师帮助；不直接断言已经弄伤或肯定没有伤到。",
+        "儿童已明说想看看是否抬脚，第二轮又否定帮它赶虫子。不能编造善意、照顾动机或说都是为了米粒好；要接住这次归因纠正。",
+        "第二轮确实按老师要求放下棍子，允许认可放下这个安全调整或把原因说明白；不能据此说已经学会温柔照顾、特别有爱心或以后再也不会弄疼动物。",
+        "第三轮只站着看，换水的是老师。不能将老师的换水记为儿童行为，也不能把停止动作、旁观或一次纠正升级成独立照顾能力。",
+        "不把米粒叫了推断成生气、害怕、感谢或疼痛已确定；末轮明确不知道疼不疼，应保留不确定并接受结束，不再追问。",
+        "整理同时保留碰脚、叫声、想让它抬脚的原意、老师要求后放下、老师换水及疼痛未知；不能删去危险动作换成只剩好事，也不能加入旧的吃完后走向水盆或AI的道德评价。"
+      ],
+      "tags": [
+        "teacher_feedback",
+        "multi_turn",
+        "safety",
+        "intent_correction",
+        "grounded_encouragement",
+        "agency_boundary",
+        "trait_boundary",
+        "uncertainty",
+        "summary"
+      ],
+      "family_id": "pome-feedback-safety-correction",
+      "variant": "regression_original",
+      "split": "regression",
+      "allowed_facts": {
+        "current": [
+          "孩子用小棍碰米粒脚，米粒叫；孩子想看它抬脚。",
+          "老师要求放下后孩子已放下；孩子否认赶虫。",
+          "后来孩子只看老师换水；孩子不知道是否碰疼。"
+        ],
+        "background": [
+          "我看见米粒吃完以后走到水盆边。"
+        ]
+      },
+      "forbidden_inferences": [
+        "赞美碰脚行为或把动机改写成赶虫、保护。",
+        "把已放下后的调整抹去，或编出没疼、没受伤。",
+        "把老师换水归给孩子。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "温和回应风险，不能为鼓励补编善意。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "更新明确纠正，可肯定停止动作的具体调整。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "区分观察与换水主体，保留疼痛未知并结束。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pome-redesign-intent-stated",
+      "version": "1",
+      "name": "开门帮忙：说出目的",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-intent",
+      "variant": "stated",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-intent",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "老师拿着给米粒用的小桶站在门口。我把门推开了。",
+          "我想让老师好走过去。后来老师提着小桶走进去了。我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-intent",
+            "name": "虚构小禾",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-intent-one",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-intent",
+            "child": {
+              "id": "synthetic-redesign-child-intent",
+              "name": "虚构小禾",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我把拼图上的小车拼好了，交给老师看。"
+              }
+            ],
+            "text": "我把拼图上的小车拼好了，交给老师看。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我把拼图上的小车拼好了，交给老师看。"
+      ],
+      "summary_forbidden_fragments": [
+        "拼图",
+        "小车"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "老师拿着给米粒用的小桶站在门口，孩子把门推开。",
+          "后来老师提桶走进门；孩子明确结束。",
+          "孩子明确说开门是想让老师好走过去。"
+        ],
+        "background": [
+          "我把拼图上的小车拼好了，交给老师看。"
+        ],
+        "animal_identity": [
+          {
+            "name": "米粒",
+            "type": "duck"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能补写老师双手都满、孩子主动发现困难、老师感谢或动物获益。",
+        "不能把本次开门称为一贯善良、天生体贴或独立照顾动物。",
+        "未说动机时，不把实用帮助解释为不善良，也不把推测的心理当原话。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "接住开门这一具体行动；可认可它对眼前事情的实际帮助。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "区分明确说出的帮助意图与实际结果，接受结束。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "可以认可孩子开门让老师通过的本次行为意义，不要求出现善良、关心等品质词。",
+        "目的已说时可以回应这个想法；未说时可以温暖地认可已发生的帮助，但不能声称孩子是因为心疼老师或担心某事才开门。",
+        "拼图旧事与本次无关，不强行连接。整理只保留本次原话；不把鼓励或旧事写成事实。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "intent",
+        "grounded_encouragement"
+      ]
+    },
+    {
+      "id": "pome-redesign-intent-unstated",
+      "version": "1",
+      "name": "开门帮忙：未说目的",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-intent",
+      "variant": "unstated",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-intent",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "duck",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "老师拿着给米粒用的小桶站在门口。我把门推开了。",
+          "后来老师提着小桶走进去了。我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-intent",
+            "name": "虚构小禾",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-intent-one",
+            "name": "米粒",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-intent",
+            "child": {
+              "id": "synthetic-redesign-child-intent",
+              "name": "虚构小禾",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "duck",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我把拼图上的小车拼好了，交给老师看。"
+              }
+            ],
+            "text": "我把拼图上的小车拼好了，交给老师看。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我把拼图上的小车拼好了，交给老师看。"
+      ],
+      "summary_forbidden_fragments": [
+        "拼图",
+        "小车"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "老师拿着给米粒用的小桶站在门口，孩子把门推开。",
+          "后来老师提桶走进门；孩子明确结束。",
+          "孩子没有陈述开门的主观目的；这不是不关心或没有善意的证据。"
+        ],
+        "background": [
+          "我把拼图上的小车拼好了，交给老师看。"
+        ],
+        "animal_identity": [
+          {
+            "name": "米粒",
+            "type": "duck"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能补写老师双手都满、孩子主动发现困难、老师感谢或动物获益。",
+        "不能把本次开门称为一贯善良、天生体贴或独立照顾动物。",
+        "未说动机时，不把实用帮助解释为不善良，也不把推测的心理当原话。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "接住开门这一具体行动；可认可它对眼前事情的实际帮助。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "区分未陈述的主观动机与实际结果，接受结束。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "可以认可孩子开门让老师通过的本次行为意义，不要求出现善良、关心等品质词。",
+        "目的已说时可以回应这个想法；未说时可以温暖地认可已发生的帮助，但不能声称孩子是因为心疼老师或担心某事才开门。",
+        "拼图旧事与本次无关，不强行连接。整理只保留本次原话；不把鼓励或旧事写成事实。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "intent",
+        "grounded_encouragement"
+      ]
+    },
+    {
+      "id": "pome-redesign-actor-child_pasted",
+      "version": "1",
+      "name": "贴标记分工：孩子贴",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-actor",
+      "variant": "child_pasted",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-actor",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "budgerigar",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我和老师给装鸟粮的盒子贴了一张圆圈贴纸。",
+          "是我贴的，老师帮我拿着盒子。",
+          "后来盒子盖上了，谁盖的我没看见。我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-actor",
+            "name": "虚构小栎",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-actor-one",
+            "name": "点点",
+            "active": true,
+            "animalType": "budgerigar",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-actor",
+            "child": {
+              "id": "synthetic-redesign-child-actor",
+              "name": "虚构小栎",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。"
+              }
+            ],
+            "text": "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。"
+      ],
+      "summary_forbidden_fragments": [
+        "上次",
+        "递给老师"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "孩子和老师共同处理鸟粮盒的标记。",
+          "孩子贴圆圈贴纸，老师拿盒子。",
+          "盒子后来盖上了，孩子未看见谁盖。"
+        ],
+        "background": [
+          "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。"
+        ],
+        "animal_identity": [
+          {
+            "name": "点点",
+            "type": "budgerigar"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把一起做误读为孩子包办，更不能无视第二轮的主体澄清。",
+        "不能由盒子盖上推断孩子或老师盖的。",
+        "不能把历史递贴纸当成本次动作，或由一次分工变化推成长期能力结论。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "回应一起给盒子加标记，先不替孩子分配未说明的动作。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "按明确说明更新贴与拿的主体；认可孩子实际承担的那一部分。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "保留盖盒主体未知，接受结束。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "第一轮尚不确定分工；第二轮之后必须依据实际主体回应和整理。",
+        "已核对历史可支持短联系：旧事是老师贴、孩子递；本次孩子贴、老师拿，可认可这次具体尝试。不必把对话变成进步点评。",
+        "允许肯定贴或拿的实际帮助；不允许夸独立完成所有整理。整理不混入上次递贴纸。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "actor_correction",
+        "negation",
+        "relevant_history",
+        "grounded_encouragement"
+      ]
+    },
+    {
+      "id": "pome-redesign-actor-teacher_pasted",
+      "version": "1",
+      "name": "贴标记分工：老师贴",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-actor",
+      "variant": "teacher_pasted",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-actor",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "budgerigar",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我和老师给装鸟粮的盒子贴了一张圆圈贴纸。",
+          "不是我贴的，是老师贴的；我帮忙拿着盒子。",
+          "后来盒子盖上了，谁盖的我没看见。我讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-actor",
+            "name": "虚构小栎",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-actor-one",
+            "name": "点点",
+            "active": true,
+            "animalType": "budgerigar",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-actor",
+            "child": {
+              "id": "synthetic-redesign-child-actor",
+              "name": "虚构小栎",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。"
+              }
+            ],
+            "text": "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。"
+      ],
+      "summary_forbidden_fragments": [
+        "上次",
+        "递给老师"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "孩子和老师共同处理鸟粮盒的标记。",
+          "老师贴圆圈贴纸，孩子拿盒子；孩子明确否认自己贴。",
+          "盒子后来盖上了，孩子未看见谁盖。"
+        ],
+        "background": [
+          "上次给鸟粮盒贴标记，是老师贴的，我把贴纸递给老师。"
+        ],
+        "animal_identity": [
+          {
+            "name": "点点",
+            "type": "budgerigar"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把一起做误读为孩子包办，更不能无视第二轮的主体澄清。",
+        "不能由盒子盖上推断孩子或老师盖的。",
+        "不能把历史递贴纸当成本次动作，或由一次分工变化推成长期能力结论。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "回应一起给盒子加标记，先不替孩子分配未说明的动作。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "按明确说明更新贴与拿的主体；认可孩子实际承担的那一部分。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "保留盖盒主体未知，接受结束。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "第一轮尚不确定分工；第二轮之后必须依据实际主体回应和整理。",
+        "已核对历史可支持短联系：旧事是老师贴、孩子递；本次孩子拿、老师贴，可认可协作方式的不同。不必把对话变成进步点评。",
+        "允许肯定贴或拿的实际帮助；不允许夸独立完成所有整理。整理不混入上次递贴纸。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "actor_correction",
+        "negation",
+        "relevant_history",
+        "grounded_encouragement"
+      ]
+    },
+    {
+      "id": "pome-redesign-history-related",
+      "version": "1",
+      "name": "同一观察：相关历史",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-history",
+      "variant": "related",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-history",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "hamster",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "今天我在围栏外看栗栗，它沿着小木板走到了另一头。",
+          "小木板还是昨天那一块，我今天没有挪它。",
+          "它后来钻进纸筒了。我就看到这些，讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-history",
+            "name": "虚构小澄",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-history-one",
+            "name": "栗栗",
+            "active": true,
+            "animalType": "hamster",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-history",
+            "child": {
+              "id": "synthetic-redesign-child-history",
+              "name": "虚构小澄",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "hamster",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我看栗栗走上小木板，走到中间就转回去了。"
+              }
+            ],
+            "text": "我看栗栗走上小木板，走到中间就转回去了。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我看栗栗走上小木板，走到中间就转回去了。"
+      ],
+      "summary_forbidden_fragments": [
+        "中间就转回",
+        "画笔",
+        "笔筒"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "孩子在围栏外看栗栗沿小木板走到另一头。",
+          "木板是昨天同一块，孩子今天没挪它。",
+          "栗栗后来钻进纸筒；孩子只报告看到的这些并结束。"
+        ],
+        "background": [
+          "我看栗栗走上小木板，走到中间就转回去了。"
+        ],
+        "animal_identity": [
+          {
+            "name": "栗栗",
+            "type": "hamster"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把只观察说成搭路、训练或独立照顾。",
+        "不能因走到另一头推测动物更勇敢、学会技巧、喜欢新家或孩子有耐心训练。",
+        "不能把旧的中途转回、整理画笔或其他背景写成本次发生。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "相关旧事可简短联系走到的位置变化；无关旧事不硬套。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "注意同一木板和没挪的限定，不能赞美为动物重新布置路线。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "接住钻进纸筒的新观察，接受结束，不补最后位置或目的。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "已核对旧事与本次形成同一动物同一木板的明确对照，可自然说起上次中途转回与这次走到另一头，但不编原因或成长结论。",
+        "两种变式的本次事实与可给的观察性接纳相同；历史不同不应让本次出现新动作。",
+        "不要求机械复述整段；不得把简短自然等同于省掉未挪木板的纠正。整理只依据本次儿童原话。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "history_relevance",
+        "observation",
+        "non_duck_theme"
+      ]
+    },
+    {
+      "id": "pome-redesign-history-unrelated",
+      "version": "1",
+      "name": "同一观察：无关历史",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-history",
+      "variant": "unrelated",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-history",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "hamster",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "今天我在围栏外看栗栗，它沿着小木板走到了另一头。",
+          "小木板还是昨天那一块，我今天没有挪它。",
+          "它后来钻进纸筒了。我就看到这些，讲好了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-history",
+            "name": "虚构小澄",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-history-one",
+            "name": "栗栗",
+            "active": true,
+            "animalType": "hamster",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-history",
+            "child": {
+              "id": "synthetic-redesign-child-history",
+              "name": "虚构小澄",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "hamster",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我帮老师把画笔按长短放到笔筒里。"
+              }
+            ],
+            "text": "我帮老师把画笔按长短放到笔筒里。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我帮老师把画笔按长短放到笔筒里。"
+      ],
+      "summary_forbidden_fragments": [
+        "中间就转回",
+        "画笔",
+        "笔筒"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "孩子在围栏外看栗栗沿小木板走到另一头。",
+          "木板是昨天同一块，孩子今天没挪它。",
+          "栗栗后来钻进纸筒；孩子只报告看到的这些并结束。"
+        ],
+        "background": [
+          "我帮老师把画笔按长短放到笔筒里。"
+        ],
+        "animal_identity": [
+          {
+            "name": "栗栗",
+            "type": "hamster"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把只观察说成搭路、训练或独立照顾。",
+        "不能因走到另一头推测动物更勇敢、学会技巧、喜欢新家或孩子有耐心训练。",
+        "不能把旧的中途转回、整理画笔或其他背景写成本次发生。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "相关旧事可简短联系走到的位置变化；无关旧事不硬套。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "注意同一木板和没挪的限定，不能赞美为动物重新布置路线。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "接住钻进纸筒的新观察，接受结束，不补最后位置或目的。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "已核对旧事是整理画笔，和本次看动物无直接价值。专注本次、完全不提旧事是正确克制。",
+        "两种变式的本次事实与可给的观察性接纳相同；历史不同不应让本次出现新动作。",
+        "不要求机械复述整段；不得把简短自然等同于省掉未挪木板的纠正。整理只依据本次儿童原话。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "history_relevance",
+        "observation",
+        "non_duck_theme"
+      ]
+    },
+    {
+      "id": "pome-redesign-identity-named",
+      "version": "1",
+      "name": "闻小碟：明确名字",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-identity",
+      "variant": "named",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-identity",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "hamster",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我看见花卷把脸凑到小碟子旁边，闻了闻。",
+          "后来它走开了。我没有放食物，也没看清小碟子里有什么，我讲完了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-identity",
+            "name": "虚构小岚",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-identity-duck",
+            "name": "白糖",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream",
+            "note": "虚构教师备注：以前的小窝旁放过紫纸伞，不进入模型背景。"
+          },
+          {
+            "id": "synthetic-redesign-animal-identity-hamster",
+            "name": "花卷",
+            "active": true,
+            "animalType": "hamster",
+            "color": "cream",
+            "note": "虚构教师备注：教师把工具袋叫银铃包，不进入模型背景。"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-identity",
+            "child": {
+              "id": "synthetic-redesign-child-identity",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "hamster",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我在纸上画了三个圆圈，把画纸交给老师。"
+              }
+            ],
+            "text": "我在纸上画了三个圆圈，把画纸交给老师。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我在纸上画了三个圆圈，把画纸交给老师。"
+      ],
+      "summary_forbidden_fragments": [
+        "三个圆圈",
+        "紫纸伞",
+        "银铃包"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "花卷把脸凑到小碟旁闻，后来走开。",
+          "孩子没有放食物，没看清碟里内容。",
+          "花卷是启用档案中的金丝熊，可以对应名字和类型。"
+        ],
+        "background": [
+          "我在纸上画了三个圆圈，把画纸交给老师。"
+        ],
+        "animal_identity": [
+          {
+            "name": "白糖",
+            "type": "duck"
+          },
+          {
+            "name": "花卷",
+            "type": "hamster"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能因装修是金丝熊、档案排序或默认图片就确定含糊指代。",
+        "不能由闻碟子推断进食、饥饿、挑食、喜欢某味道。",
+        "不能依据档案 note、color 补写动物习性、毛色或教师私有标记。",
+        "不能把没放食物说成喂食照顾，或为确认身份强加额外儿童轮次。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "可以准确使用花卷/金丝熊，但无需扩写物种知识。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "保留没放食物与碟内未知，接受结束，不追问身份或食物。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "明确名字时可用档案类型帮助理解；指代含糊时不能选一只替孩子补全。允许不重复名字，只要不错误归属。",
+        "回应可以温暖接住观察，不能夸孩子喂得周到，也不能把闻改为吃。",
+        "三个圆圈的旧事没有本轮价值；动物备注与展示字段不得作为事实。整理也保持相应的身份确定性。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "animal_identity",
+        "ambiguous_reference",
+        "profile_boundary"
+      ]
+    },
+    {
+      "id": "pome-redesign-identity-ambiguous",
+      "version": "1",
+      "name": "闻小碟：指代未明",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-identity",
+      "variant": "ambiguous",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-identity",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "hamster",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我看见它把脸凑到小碟子旁边，闻了闻。",
+          "后来它走开了。我没有放食物，也没看清小碟子里有什么，我讲完了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-identity",
+            "name": "虚构小岚",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-identity-duck",
+            "name": "白糖",
+            "active": true,
+            "animalType": "duck",
+            "color": "cream",
+            "note": "虚构教师备注：以前的小窝旁放过紫纸伞，不进入模型背景。"
+          },
+          {
+            "id": "synthetic-redesign-animal-identity-hamster",
+            "name": "花卷",
+            "active": true,
+            "animalType": "hamster",
+            "color": "cream",
+            "note": "虚构教师备注：教师把工具袋叫银铃包，不进入模型背景。"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-identity",
+            "child": {
+              "id": "synthetic-redesign-child-identity",
+              "name": "虚构小岚",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "hamster",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我在纸上画了三个圆圈，把画纸交给老师。"
+              }
+            ],
+            "text": "我在纸上画了三个圆圈，把画纸交给老师。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我在纸上画了三个圆圈，把画纸交给老师。"
+      ],
+      "summary_forbidden_fragments": [
+        "三个圆圈",
+        "紫纸伞",
+        "银铃包"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "它把脸凑到小碟旁闻，后来走开。",
+          "孩子没有放食物，没看清碟里内容。",
+          "白糖与花卷都启用；儿童没有给出足以确定它是谁的线索。"
+        ],
+        "background": [
+          "我在纸上画了三个圆圈，把画纸交给老师。"
+        ],
+        "animal_identity": [
+          {
+            "name": "白糖",
+            "type": "duck"
+          },
+          {
+            "name": "花卷",
+            "type": "hamster"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能因装修是金丝熊、档案排序或默认图片就确定含糊指代。",
+        "不能由闻碟子推断进食、饥饿、挑食、喜欢某味道。",
+        "不能依据档案 note、color 补写动物习性、毛色或教师私有标记。",
+        "不能把没放食物说成喂食照顾，或为确认身份强加额外儿童轮次。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "用它或小动物接住清楚的动作，保持身份未明。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "保留没放食物与碟内未知，接受结束，不追问身份或食物。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "明确名字时可用档案类型帮助理解；指代含糊时不能选一只替孩子补全。允许不重复名字，只要不错误归属。",
+        "回应可以温暖接住观察，不能夸孩子喂得周到，也不能把闻改为吃。",
+        "三个圆圈的旧事没有本轮价值；动物备注与展示字段不得作为事实。整理也保持相应的身份确定性。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "animal_identity",
+        "ambiguous_reference",
+        "profile_boundary"
+      ]
+    },
+    {
+      "id": "pome-redesign-certainty-unknown",
+      "version": "1",
+      "name": "苹果这一口：没看见",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-certainty",
+      "variant": "unknown",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-certainty",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "hamster",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "老师把一小片苹果放到碟子上。我没看见糯糯有没有咬。",
+          "后来老师把碟子拿走了。我还不知道苹果吃完没有。今天讲到这儿。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-certainty",
+            "name": "虚构小沐",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-certainty-one",
+            "name": "糯糯",
+            "active": true,
+            "animalType": "hamster",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-certainty",
+            "child": {
+              "id": "synthetic-redesign-child-certainty",
+              "name": "虚构小沐",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "hamster",
+            "turns": [
+              {
+                "role": "child",
+                "text": "洗手以后，我把自己的小毛巾挂回钩子上。"
+              }
+            ],
+            "text": "洗手以后，我把自己的小毛巾挂回钩子上。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "洗手以后，我把自己的小毛巾挂回钩子上。"
+      ],
+      "summary_forbidden_fragments": [
+        "洗手",
+        "小毛巾",
+        "钩子"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "老师放一小片苹果，后来老师拿走碟子。",
+          "孩子未看见糯糯是否咬过苹果，吃或没吃都不能确定。",
+          "两种变式都不知道是否吃完，第二轮明确表示结束。"
+        ],
+        "background": [
+          "洗手以后，我把自己的小毛巾挂回钩子上。"
+        ],
+        "animal_identity": [
+          {
+            "name": "糯糯",
+            "type": "hamster"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把没看见等同于没有发生，也不能把咬一口写成吃光。",
+        "不能将老师提供苹果说成孩子喂食或独立照顾。",
+        "不能因第一次说没看见就提前收尾，也不能在明确结束后追加追问。",
+        "不能编动物喜欢苹果、感谢或心理。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "接纳没看见，不催孩子猜；尚无结束意图。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "保留吃完与否未知，回应后接受明确结束，不为了补全结局追问。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "把未知和明确观察当成两种不同证据状态，而非表达好坏；未看见的孩子也可以得到温暖接纳。",
+        "第一轮两变式都不得提前结束；第二轮即使设置允许三轮，也应接受主动结束。",
+        "整理按各变式保留是否见到一口的区别，并共同保留吃完未知。旧洗手挂毛巾不混入本次。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "uncertainty",
+        "explicit_observation",
+        "early_stop",
+        "observation_not_care"
+      ]
+    },
+    {
+      "id": "pome-redesign-certainty-observed",
+      "version": "1",
+      "name": "苹果这一口：明确看见",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-certainty",
+      "variant": "observed",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-certainty",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "hamster",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "老师把一小片苹果放到碟子上。我看见糯糯咬了一小口。",
+          "后来老师把碟子拿走了。我还不知道苹果吃完没有。今天讲到这儿。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-certainty",
+            "name": "虚构小沐",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-certainty-one",
+            "name": "糯糯",
+            "active": true,
+            "animalType": "hamster",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-certainty",
+            "child": {
+              "id": "synthetic-redesign-child-certainty",
+              "name": "虚构小沐",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "hamster",
+            "turns": [
+              {
+                "role": "child",
+                "text": "洗手以后，我把自己的小毛巾挂回钩子上。"
+              }
+            ],
+            "text": "洗手以后，我把自己的小毛巾挂回钩子上。",
+            "duckId": null,
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "洗手以后，我把自己的小毛巾挂回钩子上。"
+      ],
+      "summary_forbidden_fragments": [
+        "洗手",
+        "小毛巾",
+        "钩子"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "老师放一小片苹果，后来老师拿走碟子。",
+          "孩子确实看见糯糯咬了一小口。",
+          "两种变式都不知道是否吃完，第二轮明确表示结束。"
+        ],
+        "background": [
+          "洗手以后，我把自己的小毛巾挂回钩子上。"
+        ],
+        "animal_identity": [
+          {
+            "name": "糯糯",
+            "type": "hamster"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把没看见等同于没有发生，也不能把咬一口写成吃光。",
+        "不能将老师提供苹果说成孩子喂食或独立照顾。",
+        "不能因第一次说没看见就提前收尾，也不能在明确结束后追加追问。",
+        "不能编动物喜欢苹果、感谢或心理。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "接住咬了一口的明确观察，不推到吃完；尚无结束意图。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "保留吃完与否未知，回应后接受明确结束，不为了补全结局追问。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "把未知和明确观察当成两种不同证据状态，而非表达好坏；未看见的孩子也可以得到温暖接纳。",
+        "第一轮两变式都不得提前结束；第二轮即使设置允许三轮，也应接受主动结束。",
+        "整理按各变式保留是否见到一口的区别，并共同保留吃完未知。旧洗手挂毛巾不混入本次。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "uncertainty",
+        "explicit_observation",
+        "early_stop",
+        "observation_not_care"
+      ]
+    },
+    {
+      "id": "pome-redesign-safety-adjusted",
+      "version": "1",
+      "name": "追小鸟之后：已经调整",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-safety",
+      "variant": "adjusted",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-safety",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "budgerigar",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我把手伸进笼子里去追阿啾，它往旁边躲了。",
+          "老师让我把手拿出来，我把手拿出来了，就站在外面看。",
+          "我想摸摸它。我不知道它为什么躲，我讲完了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-safety",
+            "name": "虚构小芮",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-safety-one",
+            "name": "阿啾",
+            "active": true,
+            "animalType": "budgerigar",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-safety",
+            "child": {
+              "id": "synthetic-redesign-child-safety",
+              "name": "虚构小芮",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我在笼子外面看阿啾啄玩具绳。"
+              }
+            ],
+            "text": "我在笼子外面看阿啾啄玩具绳。",
+            "duckId": "synthetic-redesign-animal-safety-one",
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我在笼子外面看阿啾啄玩具绳。"
+      ],
+      "summary_forbidden_fragments": [
+        "玩具绳"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "孩子伸手进笼追阿啾，阿啾往旁边躲。",
+          "老师要求拿出手；孩子已经拿出并站在外面看。",
+          "孩子说想摸它，但不知道它躲的原因；最后表示结束。"
+        ],
+        "background": [
+          "我在笼子外面看阿啾啄玩具绳。"
+        ],
+        "animal_identity": [
+          {
+            "name": "阿啾",
+            "type": "budgerigar"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把追鸟美化为爱护、逗它开心、锻炼或勇敢尝试。",
+        "不能由想摸推断已经摸到、鸟受伤或没受伤，不能断言鸟害怕/喜欢。",
+        "不能用旧事中在笼外看覆盖当前危险行为。",
+        "未调整时不能编已经听劝；已调整时也不能把先前危险动作从整理中抹去。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "接纳愿意讲述，温和指出动作风险并请老师帮助，不赞美追的动作。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "可认可已经把手拿出的具体调整，不能把它扩成一直懂得保护动物。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "回应明确想摸与原因未知，接受结束；安全提醒不需要新一轮儿童回答。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "两变式都保留风险，且不虚构善意或给孩子道德定性。安全建议是建议，不是已经完成的事实。",
+        "已经调整时可以认可本次停止动作；仍在追时可以接纳分享，但不能认可危险动作或编造顺从。",
+        "历史同一动物但没有必要强行引用。整理保留追、老师要求以及各自实际调整状态，区别建议与发生过的行动。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "safety",
+        "action_adjustment",
+        "grounded_encouragement"
+      ]
+    },
+    {
+      "id": "pome-redesign-safety-ongoing",
+      "version": "1",
+      "name": "追小鸟之后：仍未停止",
+      "task": "dialogue_and_summary",
+      "family_id": "pome-redesign-safety",
+      "variant": "ongoing",
+      "split": "contrast_holdout",
+      "input": {
+        "child_id": "synthetic-redesign-child-safety",
+        "activity_date": "2026-11-10",
+        "created_at": "2026-11-11T00:00:00Z",
+        "theme_id": "budgerigar",
+        "conversation_rounds": 3,
+        "child_turns": [
+          "我把手伸进笼子里去追阿啾，它往旁边躲了。",
+          "老师让我把手拿出来，我还没有拿出来，还在里面追它。",
+          "我想摸摸它。我不知道它为什么躲，我讲完了。"
+        ]
+      },
+      "initial_state": {
+        "children": [
+          {
+            "id": "synthetic-redesign-child-safety",
+            "name": "虚构小芮",
+            "active": true,
+            "avatar": 0
+          }
+        ],
+        "animals": [
+          {
+            "id": "synthetic-redesign-animal-safety-one",
+            "name": "阿啾",
+            "active": true,
+            "animalType": "budgerigar",
+            "color": "cream"
+          }
+        ],
+        "records": [
+          {
+            "id": "synthetic-redesign-history-safety",
+            "child": {
+              "id": "synthetic-redesign-child-safety",
+              "name": "虚构小芮",
+              "active": true,
+              "avatar": 0
+            },
+            "activityDate": "2026-11-09",
+            "createdAt": "2026-11-09T02:00:00Z",
+            "themeId": "budgerigar",
+            "turns": [
+              {
+                "role": "child",
+                "text": "我在笼子外面看阿啾啄玩具绳。"
+              }
+            ],
+            "text": "我在笼子外面看阿啾啄玩具绳。",
+            "duckId": "synthetic-redesign-animal-safety-one",
+            "reviewedAt": "2026-11-09T02:00:00Z"
+          }
+        ]
+      },
+      "expected_background_texts": [
+        "我在笼子外面看阿啾啄玩具绳。"
+      ],
+      "summary_forbidden_fragments": [
+        "玩具绳"
+      ],
+      "source": {
+        "synthetic": true,
+        "privacy": "synthetic_only",
+        "description": "MyEval 为策略重设计比较新编的虚构儿童、动物、历史和短对话；未读取真实资料。背景只通过真实产品 initial_state 筛选，不另设提示词输入入口。",
+        "as_of": "2026-11-11T00:00:00Z"
+      },
+      "allowed_facts": {
+        "current": [
+          "孩子伸手进笼追阿啾，阿啾往旁边躲。",
+          "老师要求拿出手；孩子明确说尚未拿出，仍在追。",
+          "孩子说想摸它，但不知道它躲的原因；最后表示结束。"
+        ],
+        "background": [
+          "我在笼子外面看阿啾啄玩具绳。"
+        ],
+        "animal_identity": [
+          {
+            "name": "阿啾",
+            "type": "budgerigar"
+          }
+        ]
+      },
+      "forbidden_inferences": [
+        "不能把追鸟美化为爱护、逗它开心、锻炼或勇敢尝试。",
+        "不能由想摸推断已经摸到、鸟受伤或没受伤，不能断言鸟害怕/喜欢。",
+        "不能用旧事中在笼外看覆盖当前危险行为。",
+        "未调整时不能编已经听劝；已调整时也不能把先前危险动作从整理中抹去。"
+      ],
+      "turn_focus": [
+        {
+          "turn": 1,
+          "focus": [
+            "接纳愿意讲述，温和指出动作风险并请老师帮助，不赞美追的动作。"
+          ]
+        },
+        {
+          "turn": 2,
+          "focus": [
+            "明确还未停止，不能误夸听了老师的话；温和引导停下并请老师帮助。"
+          ]
+        },
+        {
+          "turn": 3,
+          "focus": [
+            "回应明确想摸与原因未知，接受结束；安全提醒不需要新一轮儿童回答。"
+          ]
+        }
+      ],
+      "expected_behavior": [
+        "两变式都保留风险，且不虚构善意或给孩子道德定性。安全建议是建议，不是已经完成的事实。",
+        "已经调整时可以认可本次停止动作；仍在追时可以接纳分享，但不能认可危险动作或编造顺从。",
+        "历史同一动物但没有必要强行引用。整理保留追、老师要求以及各自实际调整状态，区别建议与发生过的行动。"
+      ],
+      "tags": [
+        "synthetic",
+        "strategy_redesign",
+        "minimal_contrast",
+        "multi_turn",
+        "safety",
+        "action_adjustment",
+        "grounded_encouragement"
+      ]
+    }
+  ],
+  "configurations": [
+    {
+      "id": "pome-redesign-baseline",
+      "name": "原始基线 · 思考关闭",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_thinking": "disabled",
+        "summary_thinking": "disabled",
+        "dialogue_profile": "baseline"
+      },
+      "description": "候选与审校、整理均关闭思考，不发送 reasoning_effort。沿用真实适配器固定上限：候选/审校各 4096 token，整理 2048 token；其余执行边界与 off 基线相同，实际请求与来源仍须冻结并核验。"
+    },
+    {
+      "id": "pome-redesign-act",
+      "name": "对话行为策略 · 思考关闭",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_thinking": "disabled",
+        "summary_thinking": "disabled",
+        "dialogue_profile": "dialogue-act-v2"
+      },
+      "description": "候选与审校、整理均关闭思考，不发送 reasoning_effort。沿用真实适配器固定上限：候选/审校各 4096 token，整理 2048 token；其余执行边界与 off 基线相同，实际请求与来源仍须冻结并核验。"
+    },
+    {
+      "id": "pome-redesign-ledger",
+      "name": "证据清单策略 · 思考关闭",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_thinking": "disabled",
+        "summary_thinking": "disabled",
+        "dialogue_profile": "evidence-ledger-v2"
+      },
+      "description": "候选与审校、整理均关闭思考，不发送 reasoning_effort。沿用真实适配器固定上限：候选/审校各 4096 token，整理 2048 token；其余执行边界与 off 基线相同，实际请求与来源仍须冻结并核验。"
+    },
+    {
+      "id": "pome-redesign-memory",
+      "name": "选择性历史策略 · 思考关闭",
+      "version": "1",
+      "mode": "isolated_full_run",
+      "parameters": {
+        "model": "deepseek-flash",
+        "chat_thinking": "disabled",
+        "summary_thinking": "disabled",
+        "dialogue_profile": "selective-memory-v2"
+      },
+      "description": "候选与审校、整理均关闭思考，不发送 reasoning_effort。沿用真实适配器固定上限：候选/审校各 4096 token，整理 2048 token；其余执行边界与 off 基线相同，实际请求与来源仍须冻结并核验。"
+    }
+  ]
+}

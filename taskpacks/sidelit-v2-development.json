@@ -1,0 +1,185 @@
+{
+  "id": "sidelit-v2-development",
+  "project": "sidelit",
+  "name": "Sidelit · 公开照片开发对照",
+  "version": "1.1.0",
+  "description": "3 个已见公开来源 × 作者基线/证据约束/意图条件；真实共用 Mac native 模型路径，无真机或摄影偏好收益声明。",
+  "rubric": [
+    {
+      "id": "visible_facts",
+      "name": "可见事实准确",
+      "description": "主体、物体、位置和关系与实际图片一致。"
+    },
+    {
+      "id": "technical_grounding",
+      "name": "技术诊断依据",
+      "description": "区分可见现象和未知拍摄参数、原因。"
+    },
+    {
+      "id": "intent_fit",
+      "name": "意图适切",
+      "description": "建议支持显式意图，并保留必要主体/环境信息。"
+    },
+    {
+      "id": "actionability",
+      "name": "建议可执行",
+      "description": "建议具体、有图片依据，可由用户决定采取。"
+    },
+    {
+      "id": "opinion_boundary",
+      "name": "审美意见边界",
+      "description": "审美偏好作为可选判断，不伪装客观事实。"
+    },
+    {
+      "id": "usefulness",
+      "name": "非空泛与非回避",
+      "description": "既不编造也给出有信息量的观察或建议。"
+    }
+  ],
+  "rubric_ref": "rubrics/sidelit-v2.json",
+  "cases": [
+    {
+      "id": "sidelit-dev-coffee-v1",
+      "version": "1",
+      "name": "公开照片 · coffee",
+      "task": "photography_critique",
+      "family_id": "skimage-coffee",
+      "split": "development",
+      "tags": [
+        "公开许可",
+        "已见开发",
+        "单图点评"
+      ],
+      "source": {
+        "id": "skimage-coffee",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coffee.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Rachel Michetti",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.coffee",
+        "media_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "input": {
+        "image_path": "POC/Resources/Samples/coffee.png",
+        "image_sha256": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+        "intent": "突出咖啡和杯子的细节，同时保留桌面环境的氛围。"
+      },
+      "expected_behavior": {
+        "guidance": "评价实际像素与显式意图；不推断不可见拍摄参数，不把模型评分当真值。"
+      }
+    },
+    {
+      "id": "sidelit-dev-chelsea-v1",
+      "version": "1",
+      "name": "公开照片 · chelsea",
+      "task": "photography_critique",
+      "family_id": "skimage-chelsea",
+      "split": "development",
+      "tags": [
+        "公开许可",
+        "已见开发",
+        "单图点评"
+      ],
+      "source": {
+        "id": "skimage-chelsea",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+        "license": {
+          "name": "CC0 1.0",
+          "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "attribution": "Stefan van der Walt",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.chelsea",
+        "media_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "input": {
+        "image_path": "POC/Resources/Samples/chelsea.png",
+        "image_sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+        "intent": "突出猫的面部和眼睛，保留自然的毛发细节。"
+      },
+      "expected_behavior": {
+        "guidance": "评价实际像素与显式意图；不推断不可见拍摄参数，不把模型评分当真值。"
+      }
+    },
+    {
+      "id": "sidelit-dev-astronaut-v1",
+      "version": "1",
+      "name": "公开照片 · astronaut",
+      "task": "photography_critique",
+      "family_id": "skimage-astronaut",
+      "split": "development",
+      "tags": [
+        "公开许可",
+        "已见开发",
+        "单图点评"
+      ],
+      "source": {
+        "id": "skimage-astronaut",
+        "type": "licensed_public",
+        "synthetic": false,
+        "url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/astronaut.png",
+        "license": {
+          "name": "Public domain; no known copyright restrictions",
+          "url": "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+        },
+        "attribution": "NASA (individual photographer not identified)",
+        "license_evidence": "https://scikit-image.org/docs/stable/api/skimage.data.html#skimage.data.astronaut",
+        "media_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "sensitivity": "public",
+        "description": "逐图许可与哈希见 Sidelit POC/SAMPLES.md；不是合成照片。"
+      },
+      "input": {
+        "image_path": "POC/Resources/Samples/astronaut.png",
+        "image_sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+        "intent": "保留人物与航天服及背景的联系，不只裁成脸部特写。"
+      },
+      "expected_behavior": {
+        "guidance": "评价实际像素与显式意图；不推断不可见拍摄参数，不把模型评分当真值。"
+      }
+    }
+  ],
+  "configurations": [
+    {
+      "id": "sidelit-author-schema-v1",
+      "name": "作者基线",
+      "version": "1.0.0",
+      "mode": "fixed_context_rerun",
+      "parameters": {
+        "profile_id": "author-schema-v1"
+      },
+      "intent_aware": false,
+      "hypothesis": "保留当前作者 schema 和默认参数。"
+    },
+    {
+      "id": "sidelit-evidence-grounded-v1",
+      "name": "A · 证据约束",
+      "version": "1.1.0",
+      "mode": "fixed_context_rerun",
+      "parameters": {
+        "profile_id": "evidence-grounded-v1"
+      },
+      "intent_aware": false,
+      "hypothesis": "减少无依据的事实与技术因果，保留具体建议。"
+    },
+    {
+      "id": "sidelit-intent-conditioned-v1",
+      "name": "B · 意图条件",
+      "version": "1.1.0",
+      "mode": "fixed_context_rerun",
+      "parameters": {
+        "profile_id": "intent-conditioned-v1"
+      },
+      "intent_aware": true,
+      "hypothesis": "在相同证据约束下使建议符合用户意图。"
+    }
+  ]
+}

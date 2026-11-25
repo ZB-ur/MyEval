@@ -1,43 +1,67 @@
 # 思间适配器
 
-2026-11-09。实现为 `myeval/adapters/sijian.py`，任务包为 `taskpacks/sijian.json`。每个 trial 启动独立本机端口的真实 `services/agent/server.py`，发送 `X-Sijian-Run-Mode: evaluation` 和唯一请求 UUID，调用 `/discover` 或 `/review`；没有复制提示词，也没有预设模型响应。
+2026-11-18。`myeval/adapters/sijian.py` 为 `sijian-http-v2`。每个 trial 启动独立本机端口的真实 `services/agent/server.py`，发送 `X-Sijian-Run-Mode: evaluation` 与唯一请求 UUID，调用 `/discover` 或 `/review`。业务提示词由产品白名单选择；MyEval 不复制提示词或模拟模型响应。
 
-任务包有三份新编虚构文字输入：预约便利与容量的发现、两种会议安排的有限证据复盘、不能由历史助手陈述补齐未选日期。正式 A/B 配置均请求 `gpt-6-sol`，分别为 `low` 与 `medium`，唯一变更因素是请求的 reasoning effort。实际生效模型、effort、供应商版本及费用保留未知，不能凭 CLI 成功推定。
+## 版本化方案
 
-## 接口与隔离
+新增开发任务包 `taskpacks/sijian-v2-development.json`。6个独立虚构家族覆盖多候选干扰、单侧条件、无实质联系、对话命名、历史事实边界和当前版本修订。这些材料已向候选作者公开，必须按开发集报告。独立留出由主脑封存，候选作者不读取。
 
-`describe(configuration)` 给出适配器 SHA、Sijian HEAD、相关 dirty diff SHA、当前源码/提示词/schema SHA 与能力；`run(case, configuration, ctx)` 遵循公共适配契约。`MYEVAL_SIJIAN_ROOT` 可指向另一份本机 checkout，默认 `/Users/lddmay/AiCoding/Sijian`。已有 Codex 登录由产品 CLI 自行使用，适配器不读认证文件。
+| 配置 ID | 产品 profile | 固定请求 |
+| --- | --- | --- |
+| `sijian-v2-baseline-v1` | `baseline-v1`，现行 discover-v4 / review-v2 | gpt-6-sol / low |
+| `sijian-v2-evidence-tension-v1` | `evidence-tension-v1`，证据与张力 | gpt-6-sol / low |
+| `sijian-v2-concise-complete-v1` | `concise-complete-v1`，精简但完整 | gpt-6-sol / low |
 
-每次独立目录保存输入、来源信息、服务日志及产品原生轨迹；产品轨迹包括请求、可见提示词/边界/schema 快照、已过滤事件、run metadata、接受结果或拒收的模型 JSON。所有运行证据只留忽略的 `.local`。`review_output` 仅含业务交付内容，去掉 run ID；配置、来源、路径、耗时和用量留在管理员证据字段中。
+两个候选分别检验有据联系/思考推进与阅读负担/用量，不预承诺胜出。schema、边界提示词、模型和推理强度相同；旧任务包 `sijian-text-boundaries-v1` 和既有 low/medium 配置继续存在。配置省略 profile 时选择 baseline-v1，产品默认也保持现行提示词。基线与证据候选版本1.0.0，精简候选经过一次开发收敛为1.1.0；第一轮提示词和输出均保留。内容哈希以具体实验冻结值为准。
 
-本机 HTTP 使用 `ProxyHandler({})` 显式绕过系统代理；在错误的代理地址和空 no_proxy 环境下，真实本机 health 已复验为 200。产品到模型供应商的连接方式没有改变。
+产品新增 `services/agent/evaluation_profiles.py` 注册表及四份版本化候选提示词。调用者只能传白名单 profile ID，不能传任意路径或模块。命令示例（开发用途，独立目录）：
 
-`fixed_context_rerun` 和 `isolated_full_run` 都明确覆盖一次真实桥接调用；后者重置桥接进程/轨迹，并不包含原生 UI 选材和保存。复盘支持显式固定 history，不宣称自动多轮环境；音频、旧轨迹重评分、供应商端取消确认均为 unsupported。没有自动模型重试。
+```sh
+python3 services/agent/server.py \
+  --port 8792 --model gpt-6-sol --effort low --timeout 120 \
+  --profile evidence-tension-v1 \
+  --trace-root /path/to/MyEval/.local/v2/sijian-isolated-traces
+```
 
-规则只检查精确引用、指定 answer_kind 和可观察工具边界；联系价值、原意、差异和回答质量仍需人工评阅。规则通过不代表语义质量通过。
+MyEval 自动选独立空闲端口，不依赖示例8792，也不访问原生用户库。`--profile` 是进程级选择；HTTP正文和原生客户端契约保持不变。运行中的不同 trial 不需要修改共享产品默认。
 
-## 必要产品改动
+## 来源与实际配置
 
-仅修改 Sijian `services/agent/server.py`：
+`describe(configuration)` 保存 adapter SHA、Sijian HEAD、相关 dirty diff SHA、bridge/registry/选中提示词/边界/schema 的内容 SHA。profile 选择和资源声明来自同一产品模块。`MYEVAL_SIJIAN_ROOT` 可指向另一份本机 checkout，默认 `~/AiCoding/Sijian`。冻结是记录来源并拒绝漂移，不是重建历史 checkout。
 
-- 增加可选 `--trace-root`，默认目录不变，MyEval 指向 trial 独立目录。
-- SIGTERM/正常关闭时向已登记请求发送协作取消，等待本机 CLI 进程组回收及轨迹写入。因为 CLI 自建进程组，不能仅杀上层 worker 就推定它退出。
+产品 `run.json` 回显 `prompt_profile`（id/version/资源hash）、`prompt_version`、实际 `prompt_template_sha256` 与带输入的 `prompt_sha256`。`observed_configuration.product_prompt_profile` 传回该记录；这能证明本地选择的提示词，不能证明供应商实际模型/effort/内部版本。模型实际生效字段和费用仍保留 unknown/null，不凭CLI成功推定。
 
-原生客户端、提示词、材料/结果校验、V13 与历史评测基线未改。产品 HEAD 为 `06ab87c530f29d56a8e19db30249999c5caccf51`；本次 bridge 文件 SHA 为 `059886ec07884ca7d15f5ef86fc22804263d56b93e99258b645a53149f1cd2e6`，实际每个 trial 也独立记录来源。
+已有 Codex 登录仅由产品 CLI 在请求边界自行使用，适配器不读认证文件。每次独立目录保留输入、来源、服务日志、请求receipt、过滤后的事件、提示词/边界/schema 快照、run metadata、接受结果或拒收的模型 JSON。只记录可观察业务事件，不保存隐藏推理。原始输出与凭据不进入Git。
 
-## 适配级真实验收
+`review_output` 仅保留业务交付，移除run ID；匿名评阅不得包含profile、来源路径、用量和胜负映射。配置与性能保存在管理员证据字段。
 
-以下是直接执行适配器/服务的运行证据，尚不是主脑的整合 UI 验收。首两项通过临时执行上下文调用 `sijian.run`，原始返回和事件保存在相应目录；两次取消均在真实请求开始后约 2 秒触发。未新增单元测试或断言验收脚本。
+## 隔离、取消与不支持的范围
 
-| 场景 | 真实产品 run ID | 观察结果 | 本地证据 |
-| --- | --- | --- | --- |
-| 发现 / Sol low | `d32808a1-c7d9-48b3-930d-8bf72a336bcb` | completed；精确引文规则通过；单次用量 input 5608 / output 217，产品耗时 17802 ms | `.local/adapter-sijian/discover-low-01/` |
-| 材料不足复盘 / Sol medium | `e27d85a2-d73b-416c-b56d-3954ca8ab9c0` | completed；answer_kind 为 insufficient_evidence，未引用历史日期；input 5874 / output 83，产品耗时 12586 ms | `.local/adapter-sijian/review-medium-01/` |
-| 适配器显式取消 | `e4c0bc0f-cd55-4915-8e1e-5624d4cacaae` | /cancel 返回 202；原请求终态 409 request_cancelled；轨迹 cancelled；CLI 已启动后经 SIGTERM 回收，group_present_after_reap=false，无接受结果 | `.local/adapter-sijian/cancel-low-01/` |
-| 运行中桥接 SIGTERM | `d0fc8d6b-a6c9-4a04-8b7f-b92ed34fcf60` | 服务退出码 0；原请求 409；轨迹 cancelled；CLI 进程已回收，独立读取 PID 也已不存在 | `.local/adapter-sijian/sigterm-01/observation.json` |
+本机 HTTP 使用 `ProxyHandler({})` 显式绕过系统代理并拒绝跳转。每trial独立进程/端口/trace-root/request UUID；结束通过已有协作取消与进程回收清理。显式取消、超时、失败和拒收均保留，不自动重试。新attempt不算独立案例。供应商远端计算/计费是否停止仍未知。
 
-取消运行的用量与供应商是否停止计算/计费均为未知，没有推算为零。上述四次都保留终态，不删除失败或取消。发现的语义输出仅作开发观察，未作为真实用户评价或模型优劣结论。
+`fixed_context_rerun` 和 `isolated_full_run` 均覆盖一次真实发现/复盘调用；后者重置进程和轨迹，不含原生 UI 选材与保存。复盘仅接受明确的固定history，不宣称动态用户或跨轮环境。音频、真机、客户端分批发现和原生阅读旅程未纳入本适配器。平台可对历史输出另建评分作业，adapter自身不重放产品来冒充重评。
 
-开发检查：`python3 -m py_compile myeval/adapters/sijian.py`；Sijian `python3 -m py_compile services/agent/server.py`、`git diff --check`；`make verify-baseline` 实际确认 56 个 V13 文件与 7 个历史评测文件逐项 SHA 匹配。基础 UI、A/B 六项矩阵、匿名评阅、重启恢复与导出的主脑集成结果见 [首版验收](acceptance/first-release.md)。
+## 质量与验收
 
-尚未覆盖：iOS 连续旅程、真机声音、客户端批次发现、真实用户材料/联系价值、稳定时延、供应商远端停止和有效配置证明。当前小样本不能证明普遍质量。
+`rubrics/sijian-v2.json` 提供材料忠实、范围来源、差异不确定性、回应任务、思考推进、阅读负担六维，每维0/1/2及 rated / not_applicable / unavailable。合理空联系或材料不足可充分完成任务；不以关系数量、更短、更长或引用数量判优。AI判断须有输出/来源引文，且不能称为真人金标。
+
+自动规则仅检查精确引文、用例明确声明的 answer_kind 和可观察工具边界。规则通过不证明联系价值、原意或用户价值。运行、规则、独立AI、主脑复核、真人评价与产品旅程分别报告。
+
+本轮已完成24次真实HTTP/CLI调用：首轮6家族×3配置共18次，精简候选仅作一次修订后复跑6次。24次均成功交付，60项自动规则通过；实际提示词hash均与对应来源声明一致。默认profile的真实health和任意profile拒绝路径也已观察，无额外模型请求。证据位于 `.local/coordination/20261118/sijian-development/`，所有初版输出、负结果、计划、来源、时间和轨迹保留。
+
+| 开发配置 | 次数 | 产品耗时中位 | input tokens 合计 | output tokens 合计 |
+| --- | ---: | ---: | ---: | ---: |
+| 现行基线 1.0.0 | 6 | 15.13秒 | 34985 | 1069 |
+| 证据与张力 1.0.0 | 6 | 15.95秒 | 34677 | 1604 |
+| 精简但完整 1.0.0（首轮保留） | 6 | 16.95秒 | 33374 | 1587 |
+| 精简但完整 1.1.0（冻结候选） | 6 | 15.40秒 | 33632 | 1381 |
+
+首轮精简方案降低了输入量，但输出仍重复，未达到易读/速度收益。最终版本针对正文逐段复述后重复总结作一次收敛，相比自身首轮输出量减少约13%，仍比基线高约29%；候选覆盖的关系也不同，不能据用量直接判优。请求只重复一次且缓存、时段不同，不作因果速度结论。
+
+首轮独立匿名AI复核18份业务输出：未报告major/critical，保留4个有争议的轻微问题（三处“更深入”推断、一处附加建议）。对部分候选的轻微偏好来自具体辨别角度，不来自关系数量；这不是人类金标或正式留出结论。最终版本另由未读首轮评分的独立评阅者完成18份复核，仍无确定major/critical，4条minor均有争议；冻结精简候选在命名例不再作“更深”推断，获得其全部适用维度2/2。两位对基线通知例的建议/比较推断扣分不同，原分歧保留，不通过平均抹平。报告为同级blind-review-final.json及review-handoff.md；小开发样本有天花板，不能把高分称为泛化验收。
+
+候选已在读取留出前冻结，15项来源hash见同级 `sijian-freeze.json`，正式入口 `sijian-ready.json`。浏览器/录屏、正式留出和发布判定由主脑整合，适配开发不代替UI、iOS或真人价值验收。
+
+既有2026-11-09适配级证据继续保留：发现low真实完成（run `d32808a1-c7d9-48b3-930d-8bf72a336bcb`，17802ms）；材料不足复盘medium真实完成（`e27d85a2-d73b-416c-b56d-3954ca8ab9c0`，12586ms）；显式取消与bridge SIGTERM均观察到本机CLI回收、无接受结果，供应商停止未知。原始目录 `.local/adapter-sijian/`；首版UI与持久化记录见[首版验收](acceptance/first-release.md)。这些历史结果不作为新候选胜出证据。
+
+本轮保留 server.py 原有 trace-root 与SIGTERM协作取消改动，没有修改V13、历史评测或原生App。`make verify-baseline` 实际确认56个V13文件与7个历史评测文件匹配；语法与diff检查只是开发检查。后续正式结果仍需注明真实用户材料、真人价值、稳定时延、真机声音与供应商配置不可见等限制。

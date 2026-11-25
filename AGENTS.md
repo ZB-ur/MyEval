@@ -1,6 +1,6 @@
 # MyEval 工作约定
 
-MyEval 是独立的通用 Agent 评测系统。首版同时服务思间 Sijian 和 pomegranagent-v2，后续通过适配器和任务包接入其他 Agent。交接入口为 `docs/handoff/2026-11-09-bootstrap.md`。
+MyEval 是独立的通用 Agent 评测系统，包含 Sijian、pomegranagent-v2、Sidelit 的项目适配器及可独立运行的演示。当前交接入口为 `docs/handoff/2026-11-25-release.md`；首版历史在 `docs/handoff/2026-11-09-bootstrap.md`。
 
 2026-11-09 用户已授权实际搭建，要求主脑使用 `gpt-6-astra` / `max`、完全访问，允许创建子智能体，预算不设上限，必须做好结果验收并提供基础 UI。具体模型和权限以运行环境实际设置为准，不把提示词中的声明当作设置成功。主脑负责方案、分工、整合与交付，不因完成一个子任务就停止整个建设。
 

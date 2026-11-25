@@ -1,0 +1,87 @@
+{
+  "id": "demo-office-v1",
+  "project": "demo",
+  "name": "演示 · 办公回复比较",
+  "version": "1.0.0",
+  "description": "六个明确虚构的成人办公场景与三个预编写输出方案。通过真实执行队列演示冻结、比较、失败保留与匿名评阅；不调用模型，不证明 AI 质量。最后一个案例是明确的故障演练。",
+  "rubric": [
+    {"id": "fidelity", "name": "忠实原文", "description": "回复是否保留材料中的限制与未定事项。"},
+    {"id": "actionability", "name": "下一步清楚", "description": "读者能否知道已确定的安排与仍需确认的问题。"},
+    {"id": "readability", "name": "容易阅读", "description": "信息是否便于理解，没有不必要的重复。"}
+  ],
+  "configurations": [
+    {"id": "demo-summary-v1", "name": "原文摘要", "version": "1.0.0", "mode": "fixed_context_rerun", "parameters": {"style": "summary"}},
+    {"id": "demo-actions-v1", "name": "行动清单", "version": "1.0.0", "mode": "fixed_context_rerun", "parameters": {"style": "actions"}},
+    {"id": "demo-evidence-v1", "name": "依据优先", "version": "1.0.0", "mode": "fixed_context_rerun", "parameters": {"style": "evidence"}}
+  ],
+  "cases": [
+    {
+      "id": "demo-meeting-v1", "family_id": "meeting", "version": "1", "name": "会议安排：确认时间与待定地点", "task": "office_reply",
+      "tags": ["虚构演示", "会议", "待确认"],
+      "source": {"type": "synthetic", "synthetic": true, "description": "为 MyEval 演示新编的虚构成人办公材料，不对应真人、公司或真实会议。", "as_of": "2026-11-25T00:00:00+08:00"},
+      "input": {"material": "团队例会改到周四 10:00，预计 30 分钟。会议室还没有确认。请各负责人周三下班前把议题发到共享文档。", "request": "给没参加通知会的同事写一条简明消息。"},
+      "expected_behavior": {"guidance": "保留时间、议题提交期限和地点尚未确认的状态。"},
+      "demo_outputs": {
+        "summary": {"reply": "例会改为周四 10:00，预计 30 分钟，会议室待确认。各负责人请在周三下班前把议题补到共享文档。", "quotes": ["会议室还没有确认。"]},
+        "actions": {"reply": "请先记下两项安排：\n• 周三下班前：负责人把议题写进共享文档。\n• 周四 10:00：参加 30 分钟例会。\n会议室尚未确认，地点需要另行核实。", "quotes": ["请各负责人周三下班前把议题发到共享文档。"]},
+        "evidence": {"reply": "已确定：周四 10:00 开例会，预计 30 分钟；负责人周三下班前提交议题。\n待确认：会议室。通知原文没有给出地点，请勿按上次会议室安排。", "quotes": ["团队例会改到周四 10:00，预计 30 分钟。", "会议室还没有确认。"]}
+      }
+    },
+    {
+      "id": "demo-release-v1", "family_id": "release", "version": "1", "name": "上线计划：目标日期并非承诺", "task": "office_reply",
+      "tags": ["虚构演示", "计划", "条件"],
+      "source": {"type": "synthetic", "synthetic": true, "description": "为 MyEval 演示新编的虚构项目安排，不对应真实项目。", "as_of": "2026-11-25T00:00:00+08:00"},
+      "input": {"material": "检索功能计划在下周二试运行，前提是周一完成权限检查。权限检查由林工负责，目前还未结束。试运行只向内部同事开放。", "request": "整理目前进度，避免让人误以为已经确定对外上线。"},
+      "expected_behavior": {"guidance": "区分条件性试运行目标与已确认上线；保留内部范围。"},
+      "demo_outputs": {
+        "summary": {"reply": "检索功能暂定下周二内部试运行，仍取决于周一能否完成权限检查。林工负责检查，目前尚未结束；这不是对外上线安排。", "quotes": ["试运行只向内部同事开放。"]},
+        "actions": {"reply": "• 林工：继续权限检查，目标是在周一完成。\n• 团队：根据检查结果确认下周二能否试运行。\n• 使用范围：内部同事。\n当前没有已确定的对外上线日期。", "quotes": ["前提是周一完成权限检查。"]},
+        "evidence": {"reply": "已知目标是“下周二试运行”，不是无条件的上线承诺。权限检查仍未结束，周一完成检查是前提；即使按计划开展，也只向内部同事开放。", "quotes": ["权限检查由林工负责，目前还未结束。", "试运行只向内部同事开放。"]}
+      }
+    },
+    {
+      "id": "demo-research-v1", "family_id": "research", "version": "1", "name": "研究记录：小样本不能代替整体判断", "task": "office_reply",
+      "tags": ["虚构演示", "研究", "证据范围"],
+      "source": {"type": "synthetic", "synthetic": true, "description": "为 MyEval 演示新编的虚构成人访谈汇总，不是实际用户研究。", "as_of": "2026-11-25T00:00:00+08:00"},
+      "input": {"material": "本周访谈了 5 位内部试用者，其中 3 位觉得新搜索入口更容易找到，2 位没有明显偏好。尚未记录任务完成时间，也没有外部用户参与。", "request": "写一句目前可以分享的发现，再说明还缺什么证据。"},
+      "expected_behavior": {"guidance": "保留样本规模、内部来源与尚未测量的指标，不推断整体效率提高。"},
+      "demo_outputs": {
+        "summary": {"reply": "5 位内部试用者中有 3 位觉得新入口更容易找到，另 2 位没有明显偏好。还缺任务完成时间和外部用户证据，暂不能据此判断整体效率提升。", "quotes": ["尚未记录任务完成时间，也没有外部用户参与。"]},
+        "actions": {"reply": "当前发现：3/5 位内部试用者偏好新入口，2/5 无明显偏好。\n接下来可补充：实际任务完成时间，以及外部用户的使用反馈。两项都还没有记录。", "quotes": ["其中 3 位觉得新搜索入口更容易找到，2 位没有明显偏好。"]},
+        "evidence": {"reply": "这次材料支持一个有限发现：5 位内部试用者中的 3 位觉得入口更容易找到。它没有提供任务完成时间，也没有外部样本，因此不支持“所有用户更快完成任务”的结论。", "quotes": ["本周访谈了 5 位内部试用者", "尚未记录任务完成时间，也没有外部用户参与。"]}
+      }
+    },
+    {
+      "id": "demo-handoff-v1", "family_id": "handoff", "version": "1", "name": "工作交接：保留负责人和依赖", "task": "office_reply",
+      "tags": ["虚构演示", "交接", "依赖"],
+      "source": {"type": "synthetic", "synthetic": true, "description": "为 MyEval 演示新编的虚构工作交接，不对应真实员工或资产。", "as_of": "2026-11-25T00:00:00+08:00"},
+      "input": {"material": "陈同事已把帮助页初稿放到共享目录。示意图由周同事补充，预计周五完成。内容审核要等示意图补齐后再安排，审核日期还未确定。", "request": "让接手的同事一眼看清已经完成什么、还在等什么。"},
+      "expected_behavior": {"guidance": "区分初稿完成、示意图预计完成与审核待安排，不捏造审核期限。"},
+      "demo_outputs": {
+        "summary": {"reply": "帮助页初稿已在共享目录。周同事正在补示意图，预计周五完成；之后再安排内容审核，审核日期尚未确定。", "quotes": ["审核日期还未确定。"]},
+        "actions": {"reply": "已完成：陈同事提交帮助页初稿。\n等待：周同事补齐示意图，预计周五完成。\n随后：示意图齐全后安排内容审核，日期待定。", "quotes": ["内容审核要等示意图补齐后再安排"]},
+        "evidence": {"reply": "可以开始查看共享目录中的初稿。当前卡点是示意图：周同事预计周五补齐。材料只说之后安排审核，没有承诺审核完成日期。", "quotes": ["陈同事已把帮助页初稿放到共享目录。", "审核日期还未确定。"]}
+      }
+    },
+    {
+      "id": "demo-document-v1", "family_id": "document", "version": "1", "name": "资料版本：避免引用已失效内容", "task": "office_reply",
+      "tags": ["虚构演示", "版本", "引用"],
+      "source": {"type": "synthetic", "synthetic": true, "description": "为 MyEval 演示新编的虚构流程文档通知，不涉及真实制度。", "as_of": "2026-11-25T00:00:00+08:00"},
+      "input": {"material": "申请流程已更新到 v3。v2 中的邮箱提交方式不再适用，新申请需要在内部表单填写。已提交的旧申请无需重填，后续处理结果会另行通知。", "request": "给准备提交申请的人说明该用哪一版，旧申请是否需要再交。"},
+      "expected_behavior": {"guidance": "只使用 v3 的新申请入口，保留旧申请无需重填及结果未定。"},
+      "demo_outputs": {
+        "summary": {"reply": "新申请请按 v3 使用内部表单，不再通过 v2 的邮箱方式提交。已提交的旧申请无需重填，处理结果另行通知。", "quotes": ["已提交的旧申请无需重填"]},
+        "actions": {"reply": "• 准备新申请：使用 v3 的内部表单。\n• 已按旧流程提交：不用再次提交。\n• 等待处理结果：目前尚无具体通知时间。", "quotes": ["新申请需要在内部表单填写。", "后续处理结果会另行通知。"]},
+        "evidence": {"reply": "材料已明确停用 v2 邮箱提交方式，因此新申请应使用内部表单。旧申请被明确豁免重填；“无需重填”不等于“已经获批”，处理结果仍待通知。", "quotes": ["v2 中的邮箱提交方式不再适用", "已提交的旧申请无需重填"]}
+      }
+    },
+    {
+      "id": "demo-missing-attachment-v1", "family_id": "missing-attachment", "version": "1", "name": "故障演练：附件未提供", "task": "office_reply",
+      "tags": ["虚构演示", "明确故障演练"],
+      "source": {"type": "synthetic", "synthetic": true, "description": "专门用于演示失败保留的虚构案例；三个方案均按设计失败，不用于质量比较。", "as_of": "2026-11-25T00:00:00+08:00"},
+      "input": {"material": "这是一项明确的故障演练：请求要求总结附件，但案例故意不提供附件。", "request": "总结这份未提供的附件。"},
+      "expected_behavior": {"guidance": "记录 demo_intentional_failure，保留输入与事件，不编造附件内容。"},
+      "demo_failure": true
+    }
+  ]
+}

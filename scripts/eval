@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+"""Machine-readable local MyEval client. No credentials are accepted on argv."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import tempfile
+import time
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlencode, urlsplit
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
+
+ROOT = Path(__file__).resolve().parents[1]
+EXIT_PASS, EXIT_FAIL, EXIT_INCONCLUSIVE, EXIT_OPERATIONAL = 0, 1, 2, 3
+
+
+class ClientError(Exception):
+    def __init__(self, message, **details):
+        self.message, self.details = message, details
+
+
+class ArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        raise ClientError("命令参数不正确", detail=message)
+
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+class Client:
+    def __init__(self, data_dir, url=None, request_timeout=60):
+        self.data_dir = Path(data_dir).expanduser().resolve()
+        if url is None:
+            metadata = self.data_dir / "server.json"
+            try:
+                url = json.loads(metadata.read_text()).get("url")
+            except (OSError, ValueError, AttributeError):
+                url = None
+        self.url = (url or "http://127.0.0.1:8310").rstrip("/")
+        parsed = urlsplit(self.url)
+        if (parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost"}
+                or parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment):
+            raise ClientError("CLI 只连接本机 http://127.0.0.1:PORT 或 http://localhost:PORT")
+        self.timeout = request_timeout
+        self.opener = build_opener(ProxyHandler({}), NoRedirect)
+
+    def request(self, path, body=None, binary=False):
+        try:
+            token = (self.data_dir / "admin.token").read_text().strip()
+        except OSError:
+            raise ClientError("无法读取数据目录的管理员访问码；请使用服务实际的 --data-dir") from None
+        if not token:
+            raise ClientError("管理员访问码为空")
+        headers = {"Accept": "application/zip" if binary else "application/json", "X-MyEval-Admin": token}
+        payload = None
+        if body is not None:
+            headers["Content-Type"] = "application/json"
+            payload = json.dumps(body, ensure_ascii=False, allow_nan=False).encode()
+        request = Request(self.url + path, data=payload, headers=headers, method="POST" if body is not None else "GET")
+        try:
+            with self.opener.open(request, timeout=self.timeout) as response:
+                raw = response.read()
+                return raw if binary else json.loads(raw)
+        except HTTPError as error:
+            try:
+                details = json.loads(error.read(1_000_000))
+                message = str(details.get("error") or "服务拒绝请求")[:2000]
+            except (ValueError, AttributeError):
+                message = "服务返回无法解析的错误"
+            raise ClientError(message, http_status=error.code) from None
+        except (URLError, TimeoutError, OSError):
+            raise ClientError("无法连接 MyEval，或请求超时", url=self.url) from None
+        except (ValueError, UnicodeError):
+            raise ClientError("服务返回的内容不是有效 JSON") from None
+        finally:
+            token = None
+
+
+def load_json(path):
+    try:
+        value = json.loads(sys.stdin.read() if str(path) == "-" else Path(path).expanduser().read_text())
+    except (OSError, ValueError):
+        raise ClientError("无法读取 JSON 输入文件") from None
+    if not isinstance(value, dict):
+        raise ClientError("JSON 输入必须为对象")
+    return value
+
+
+def emit(value):
+    print(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False))
+
+
+def atom(value):
+    return quote(str(value), safe="")
+
+
+def waiting(client, identifier, *, kind="experiment", timeout=3600, poll=2):
+    if timeout <= 0 or poll < 0.2 or poll > 60:
+        raise ClientError("等待上限必须为正，轮询间隔需为 0.2–60 秒")
+    path = "/api/experiments/" + atom(identifier) if kind == "experiment" else "/api/evaluation-jobs/" + atom(identifier)
+    deadline = time.monotonic() + timeout
+    previous = None
+    while True:
+        value = client.request(path)
+        status = value.get("status")
+        if kind == "experiment":
+            completed, total = value.get("completed_trials", 0), value.get("total_trials", 0)
+            done = status in {"completed", "completed_with_issues", "cancelled", "failed", "stopped"} or (total > 0 and completed == total)
+        else:
+            completed = value.get("completed", value.get("completed_items"))
+            total = value.get("total", value.get("total_items"))
+            done = status in {"completed", "completed_with_issues", "succeeded", "failed", "cancelled", "interrupted", "unavailable"}
+        progress = (status, completed, total)
+        if progress != previous:
+            print(json.dumps({"id": identifier, "status": status, "completed": completed, "total": total}, ensure_ascii=False), file=sys.stderr)
+            previous = progress
+        if done:
+            successful = status in {"completed", "succeeded"}
+            return value, EXIT_PASS if successful else EXIT_FAIL
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return {"status": "wait_timeout", "id": identifier, "kind": kind, "last_observed": value,
+                    "execution_cancelled": False}, EXIT_OPERATIONAL
+        time.sleep(min(poll, remaining))
+
+
+def save_bytes(path, raw):
+    target = Path(path).expanduser().absolute()
+    if target.exists():
+        raise ClientError("导出目标已存在；请使用新的文件名，避免覆盖证据")
+    if any(part.is_symlink() for part in [target, *target.parents]):
+        raise ClientError("导出目标及父目录不得是符号链接")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=".myeval-export-", dir=target.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as output:
+            output.write(raw)
+            output.flush()
+            os.fsync(output.fileno())
+        os.chmod(temporary, 0o600)
+        # Hard linking creates the target only if it is still absent.
+        os.link(temporary, target)
+        return str(target)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def parser():
+    result = ArgumentParser(description="MyEval 本机 CLI；输出 JSON。退出码：通过 0、未通过 1、证据不足 2、操作失败 3。")
+    result.add_argument("--data-dir", type=Path, default=ROOT / ".local" / "data", help="服务的数据目录；仅在请求边界读取管理员访问码")
+    result.add_argument("--url", help="默认读取数据目录 server.json；仅允许本机 HTTP")
+    result.add_argument("--request-timeout", type=float, default=60)
+    commands = result.add_subparsers(dest="command", required=True)
+    commands.add_parser("health", help="实际产品与评分并发、服务能力")
+    commands.add_parser("catalog", help="已注册任务包与数据集")
+    experiments = commands.add_parser("experiments", aliases=["list"], help="轻量实验列表")
+    experiments.add_argument("--project")
+    for name in ("show", "stop", "pause", "resume", "analysis"):
+        sub = commands.add_parser(name)
+        sub.add_argument("id")
+    sub = commands.add_parser("retry")
+    sub.add_argument("trial_id")
+    sub = commands.add_parser("start", help="从 JSON 文件建立实验；- 从 stdin 读取")
+    sub.add_argument("file")
+    sub.add_argument("--wait", action="store_true")
+    sub.add_argument("--timeout", type=float, default=3600)
+    sub.add_argument("--poll", type=float, default=2)
+    sub = commands.add_parser("wait", help="等待现有实验或评分作业；超时不取消执行")
+    sub.add_argument("id")
+    sub.add_argument("--kind", choices=["experiment", "evaluation"], default="experiment")
+    sub.add_argument("--timeout", type=float, default=3600)
+    sub.add_argument("--poll", type=float, default=2)
+    sub = commands.add_parser("export")
+    sub.add_argument("id")
+    sub.add_argument("--format", choices=["json", "zip"], default="zip")
+    sub.add_argument("--output", "-o", required=True)
+    sub.add_argument("--case-id")
+    sub = commands.add_parser("datasets")
+    operations = sub.add_subparsers(dest="operation", required=True)
+    operations.add_parser("list")
+    child = operations.add_parser("import")
+    child.add_argument("file")
+    child = operations.add_parser("show")
+    child.add_argument("id")
+    child.add_argument("--version")
+    sub = commands.add_parser("import-traces")
+    sub.add_argument("file")
+    commands.add_parser("evaluators")
+    sub = commands.add_parser("score", help="提交独立评分作业，输入 schema 见 evaluation-contract")
+    sub.add_argument("file")
+    sub.add_argument("--wait", action="store_true")
+    sub.add_argument("--timeout", type=float, default=3600)
+    sub.add_argument("--poll", type=float, default=2)
+    sub = commands.add_parser("jobs")
+    sub.add_argument("id", nargs="?")
+    sub.add_argument("--cancel", action="store_true")
+    sub = commands.add_parser("decision", help="持久化一次门槛判定并按结论返回退出码")
+    sub.add_argument("id")
+    sub.add_argument("--policy", help="JSON policy；文件可直接为 policy 或 {policy: ...}")
+    sub.add_argument("--list", action="store_true")
+    sub = commands.add_parser("backups")
+    operations = sub.add_subparsers(dest="operation", required=True)
+    operations.add_parser("list")
+    child = operations.add_parser("create")
+    child.add_argument("--label")
+    child = operations.add_parser("restore")
+    child.add_argument("id")
+    child.add_argument("destination")
+    sub = commands.add_parser("queue")
+    options = sub.add_mutually_exclusive_group()
+    options.add_argument("--pause", action="store_true")
+    options.add_argument("--resume", action="store_true")
+    sub.add_argument("--concurrency", type=int)
+    return result
+
+
+def run(args):
+    if args.request_timeout <= 0:
+        raise ClientError("请求超时必须为正数")
+    client = Client(args.data_dir, args.url, args.request_timeout)
+    command = args.command
+    code = EXIT_PASS
+    if command == "health":
+        value = client.request("/api/health")
+    elif command == "catalog":
+        value = client.request("/api/catalog")
+    elif command in {"experiments", "list"}:
+        value = client.request("/api/experiments" + ("?" + urlencode({"project": args.project}) if args.project else ""))
+    elif command in {"show", "analysis", "stop", "pause", "resume"}:
+        path = "/api/experiments/" + atom(args.id) + ("/" + command if command != "show" else "")
+        value = client.request(path, {} if command in {"stop", "pause", "resume"} else None)
+    elif command == "retry":
+        value = client.request("/api/trials/" + atom(args.trial_id) + "/retry", {})
+    elif command in {"start", "score"}:
+        value = client.request("/api/experiments" if command == "start" else "/api/evaluation-jobs", load_json(args.file))
+        if args.wait:
+            identifier = value.get("id") or value.get("job", {}).get("id")
+            if not identifier:
+                raise ClientError("创建响应缺少 ID，无法继续等待")
+            value, code = waiting(client, identifier, kind="experiment" if command == "start" else "evaluation", timeout=args.timeout, poll=args.poll)
+    elif command == "wait":
+        value, code = waiting(client, args.id, kind=args.kind, timeout=args.timeout, poll=args.poll)
+    elif command == "export":
+        query = {"format": args.format}
+        if args.case_id:
+            query["case_id"] = args.case_id
+        path = "/api/export/" + atom(args.id) + "?" + urlencode(query)
+        content = client.request(path, binary=True)
+        destination = save_bytes(args.output, content)
+        import hashlib
+        value = {"status": "exported", "path": destination, "format": args.format,
+                 "bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()}
+    elif command == "datasets":
+        if args.operation == "list":
+            value = client.request("/api/datasets")
+        elif args.operation == "import":
+            value = client.request("/api/datasets/import", load_json(args.file))
+        else:
+            value = client.request("/api/datasets/" + atom(args.id) + ("/versions/" + atom(args.version) if args.version else ""))
+    elif command == "import-traces":
+        value = client.request("/api/imports/traces", load_json(args.file))
+    elif command == "evaluators":
+        value = client.request("/api/evaluators")
+    elif command == "jobs":
+        if args.cancel and not args.id:
+            raise ClientError("取消作业需要指定 ID")
+        value = client.request("/api/evaluation-jobs" + ("/" + atom(args.id) if args.id else "") + ("/cancel" if args.cancel else ""), {} if args.cancel else None)
+    elif command == "decision":
+        path = "/api/experiments/" + atom(args.id) + "/decisions"
+        policy = load_json(args.policy) if args.policy else {}
+        if args.list:
+            value = client.request(path)
+        else:
+            value = client.request(path, policy if "policy" in policy else {"policy": policy})
+            status = value.get("outcome") or value.get("status") or value.get("decision")
+            if isinstance(status, dict):
+                status = status.get("status") or status.get("outcome")
+            code = {"pass": EXIT_PASS, "passed": EXIT_PASS, "fail": EXIT_FAIL, "failed": EXIT_FAIL,
+                    "inconclusive": EXIT_INCONCLUSIVE}.get(status, EXIT_INCONCLUSIVE)
+    elif command == "backups":
+        if args.operation == "list":
+            value = client.request("/api/backups")
+        elif args.operation == "create":
+            value = client.request("/api/backups", {"label": args.label} if args.label else {})
+        else:
+            value = client.request("/api/backups/" + atom(args.id) + "/restore", {"destination": str(Path(args.destination).expanduser().absolute())})
+    elif command == "queue":
+        body = {}
+        if args.pause or args.resume:
+            body["paused"] = args.pause
+        if args.concurrency is not None:
+            body["concurrency"] = args.concurrency
+        value = client.request("/api/queue", body or None)
+    else:
+        raise ClientError("未知命令")
+    emit(value)
+    return code
+
+
+def main():
+    try:
+        return run(parser().parse_args())
+    except ClientError as error:
+        emit({"status": "error", "error": error.message, **error.details})
+        return EXIT_OPERATIONAL
+    except KeyboardInterrupt:
+        emit({"status": "client_interrupted", "execution_cancelled": False})
+        return 130
+    except (OSError, ValueError, TypeError) as error:
+        emit({"status": "error", "error": "CLI 操作未完成", "error_type": type(error).__name__})
+        return EXIT_OPERATIONAL
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

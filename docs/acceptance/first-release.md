@@ -7,7 +7,7 @@
 ## 入口与运行条件
 
 ```sh
-cd /Users/lddmay/MyEval
+cd /path/to/MyEval
 scripts/service start
 scripts/open
 # 可选观测平台
