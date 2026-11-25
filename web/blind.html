@@ -1,2 +1,10 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MyEval · 匿名评审</title><link rel="stylesheet" href="/style.css"><script type="module" src="/blind.js"></script></head><body class="blind-body"><header class="blind-header"><div class="brand"><span class="brand-mark">M</span><span>MyEval<small>BLIND REVIEW</small></span></div><div class="muted">匿名评审 · <span id="reviewer-label">载入中</span></div><button id="anonymous-export" class="small">导出匿名评价 ↓</button></header><main class="blind-main" id="blind-app"><div class="empty">正在读取配对…</div></main><div id="toast" role="status" hidden></div></body></html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#ffffff"><title>MyEval · 匿名评审</title><link rel="stylesheet" href="/style.css"><script type="module" src="/blind.js"></script></head>
+<body class="blind-body">
+  <a class="skip-link" href="#blind-app">跳到评审内容</a>
+  <header class="blind-header"><div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="20" height="21" rx="6"/><path d="m8 14 4 4 8-9"/></svg></span><span>MyEval<small>独立匿名评审</small></span></div><div class="blind-seat muted">评审席位 · <span id="reviewer-label">载入中</span></div><button id="anonymous-export" class="icon-button" type="button" aria-label="导出匿名评价" title="导出匿名评价"></button></header>
+  <main class="blind-main" id="blind-app" tabindex="-1"><div class="page-loading"><span class="spinner"></span><p>正在读取匿名配对…</p></div></main>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
